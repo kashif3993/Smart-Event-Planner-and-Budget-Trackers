@@ -1,0 +1,262 @@
+/* ===== AI Task Checklist card ===== */
+.task-checklist-card {
+    margin-top: 24px;
+    padding: 24px;
+}
+
+.task-checklist-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.task-checklist-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.task-checklist-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.phase-filter-dropdown .dropdown-menu {
+    width: 180px;
+}
+
+.ai-generate-status {
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.ai-generate-status.is-success { background-color: #d1fae5; color: #065f46; }
+.ai-generate-status.is-error   { background-color: #fee2e2; color: #b91c1c; }
+.ai-generate-status.is-loading { background-color: var(--primary-light); color: var(--primary); }
+
+/* ===== Table ===== */
+.task-table-wrap {
+    overflow-x: auto;
+}
+
+.task-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.task-table thead th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.task-table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.task-table tbody tr.task-row:hover {
+    background-color: var(--bg-color);
+}
+
+.phase-group-row td {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 8px 16px;
+    border-bottom: none;
+}
+
+.task-name-cell {
+    font-weight: 600;
+}
+
+.task-notes-cell {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.task-depends-cell {
+    font-size: 12px;
+    color: var(--primary);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.task-depends-cell i {
+    font-size: 10px;
+}
+
+.priority-high   { background-color: #fee2e2; color: #b91c1c; }
+.priority-medium { background-color: #fef3c7; color: #92400e; }
+.priority-low    { background-color: #dbeafe; color: #1e40af; }
+
+.status-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    min-width: 60px;
+}
+
+.task-toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background-color: var(--border);
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.2s;
+}
+
+.task-toggle::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: var(--white);
+    transition: transform 0.2s;
+}
+
+.task-toggle.is-on {
+    background-color: var(--primary);
+}
+
+.task-toggle.is-on::before {
+    transform: translateX(18px);
+}
+
+.task-edit-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.task-edit-btn:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+/* ===== Pagination ===== */
+.task-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-dark);
+}
+
+.page-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.page-btn.disabled {
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+.page-current {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* ===== Smart Planning Insight ===== */
+.insight-box {
+    margin-top: 24px;
+}
+
+.insight-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.insight-row p {
+    flex: 1;
+}
+
+/* ===== Responsive: collapse table to stacked cards ===== */
+@media (max-width: 768px) {
+    .task-table thead {
+        display: none;
+    }
+
+    .task-table, .task-table tbody, .task-table tr, .task-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .task-table tbody tr.task-row {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    .task-table tbody td {
+        border-bottom: none;
+        padding: 6px 0;
+    }
+
+    .phase-group-row {
+        margin-bottom: 8px;
+        border-radius: 6px;
+    }
+
+    .insight-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

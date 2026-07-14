@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'ai_task_generator' => [
+        'url' => env('AI_TASK_API_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        'key' => env('AI_TASK_API_KEY'),
+        'model' => env('AI_TASK_API_MODEL', 'gemini-flash-latest'),
+    ],
+
 ];

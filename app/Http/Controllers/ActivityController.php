@@ -15,8 +15,7 @@ class ActivityController extends Controller
     {
         $filter = $request->query('type', 'all');
 
-        $query = Activity::with('event')
-            ->forUser(Auth::id())
+        $query = Activity::forUser(Auth::id())
             ->latest();
 
         // Filter by activity type if provided

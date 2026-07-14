@@ -32,15 +32,15 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-title">Total Events</div>
-                    <div class="stat-value">{{ $totalEvents ?? 12 }}</div>
-                    <div class="stat-desc positive">↗ +2 this month</div>
+                    <div class="stat-value">{{ $totalEvents ?? 0 }}</div>
+                    <div class="stat-desc positive">All time events</div>
                     <div class="stat-icon">📅</div>
                 </div>
                 
                 <div class="stat-card">
                     <div class="stat-title">Upcoming Events</div>
-                    <div class="stat-value">{{ $upcomingEventsCount ?? 3 }}</div>
-                    <div class="stat-desc">Next: Tech Summit 2026</div>
+                    <div class="stat-value">{{ $upcomingEventsCount ?? 0 }}</div>
+                    <div class="stat-desc">Scheduled for future</div>
                     <div class="stat-icon">🔜</div>
                 </div>
 
@@ -48,15 +48,15 @@
                     <div class="stat-title">Budget Status</div>
                     <div class="stat-value" style="color: #0d9488;">On Track</div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar"></div>
+                        <div class="progress-bar" style="width: {{ $budgetPercentage ?? 0 }}%;"></div>
                     </div>
-                    <div class="stat-desc">72% of annual budget used</div>
+                    <div class="stat-desc">{{ round($budgetPercentage ?? 0) }}% of total budget used</div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-title">Pending Tasks</div>
-                    <div class="stat-value" style="color: #ef4444;">{{ $pendingTasks ?? 15 }}</div>
-                    <div class="stat-desc danger">! {{ $highPriorityTasks ?? 4 }} high priority</div>
+                    <div class="stat-value" style="color: #ef4444;">{{ $pendingTasks ?? 0 }}</div>
+                    <div class="stat-desc danger">! {{ $highPriorityTasks ?? 0 }} high priority</div>
                     <div class="stat-icon">📋</div>
                 </div>
             </div>
@@ -72,43 +72,22 @@
                     </div>
                     
                     <div class="bar-chart">
-                        <!-- Simulated Chart Bars -->
-                        <div class="bar-group">
-                            <div class="bar" style="height: 100%;">
-                                <div class="bar-fill" style="height: 60%;"></div>
-                            </div>
-                            <div class="bar-label">JAN</div>
-                        </div>
-                        <div class="bar-group">
-                            <div class="bar" style="height: 100%;">
-                                <div class="bar-fill" style="height: 85%;"></div>
-                            </div>
-                            <div class="bar-label">FEB</div>
-                        </div>
-                        <div class="bar-group">
-                            <div class="bar" style="height: 100%;">
-                                <div class="bar-fill" style="height: 40%; background-color:#38bdf8;"></div>
-                            </div>
-                            <div class="bar-label">MAR</div>
-                        </div>
-                        <div class="bar-group">
-                            <div class="bar" style="height: 100%;">
-                                <div class="bar-fill" style="height: 95%;"></div>
-                            </div>
-                            <div class="bar-label">APR</div>
-                        </div>
-                        <div class="bar-group">
-                            <div class="bar" style="height: 100%;">
-                                <div class="bar-fill" style="height: 70%;"></div>
-                            </div>
-                            <div class="bar-label">MAY</div>
-                        </div>
-                        <div class="bar-group">
-                            <div class="bar" style="height: 100%;">
-                                <div class="bar-fill" style="height: 55%; background-color:#38bdf8;"></div>
-                            </div>
-                            <div class="bar-label">JUN</div>
-                        </div>
+                        @if(isset($monthlySpendPercentages))
+                            @foreach($monthlySpendPercentages as $index => $percentage)
+                                @php
+                                    $bg = '';
+                                    if ($index == 2 || $index == 5) {
+                                        $bg = 'background-color:#38bdf8;';
+                                    }
+                                @endphp
+                                <div class="bar-group">
+                                    <div class="bar" style="height: 100%;">
+                                        <div class="bar-fill" style="height: {{ $percentage }}%; {{ $bg }}"></div>
+                                    </div>
+                                    <div class="bar-label">{{ $monthlyLabels[$index] }}</div>
+                                </div>
+                            @endforeach
+                        @endif
                     </div>
                 </div>
 
@@ -119,7 +98,7 @@
                     
                     <div class="donut-chart">
                         <div class="donut-inner">
-                            <div class="donut-value">75%</div>
+                            <div class="donut-value">{{ $globalProgress ?? 0 }}%</div>
                             <div class="donut-label">COMPLETED</div>
                         </div>
                     </div>
@@ -127,11 +106,11 @@
                     <div class="chart-stats">
                         <div>
                             <div class="c-stat-title">Active Stages</div>
-                            <div class="c-stat-val">24</div>
+                            <div class="c-stat-val">{{ sprintf('%02d', $activeStagesCount ?? 0) }}</div>
                         </div>
                         <div style="text-align: right;">
                             <div class="c-stat-title">Due Today</div>
-                            <div class="c-stat-val blue">08</div>
+                            <div class="c-stat-val blue">{{ sprintf('%02d', $dueToday ?? 0) }}</div>
                         </div>
                     </div>
                 </div>

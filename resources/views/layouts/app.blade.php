@@ -64,8 +64,8 @@
                         <div class="dropdown-header">
                             <strong>{{ auth()->user()->name ?? 'User' }}</strong>
                         </div>
-                        <a href="{{ route('profile.show') }}" class="dropdown-item">My Profile</a>
-                        <a href="{{ route('settings.index') }}" class="dropdown-item">Settings</a>
+                        <a href="#" class="dropdown-item">My Profile</a>
+                        <a href="#" class="dropdown-item">Settings</a>
                         <div class="dropdown-divider"></div>
                         <form method="POST" action="{{ route('logout') }}" style="margin:0;">
                             @csrf

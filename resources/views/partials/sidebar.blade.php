@@ -9,44 +9,44 @@
 
         <ul class="nav-menu">
             <li class="nav-item">
-                <a href="#" class="nav-link active">
+                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <span class="nav-icon">📊</span> Dashboard
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('events.index') }}" class="nav-link {{ request()->routeIs('events.*') ? 'active' : '' }}">
                     <span class="nav-icon">📅</span> Events
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('timeline.index') }}" class="nav-link {{ request()->routeIs('timeline.*') ? 'active' : '' }}">
                     <span class="nav-icon">⏱️</span> Timeline
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('budget.index') }}" class="nav-link {{ request()->routeIs('budget.*') ? 'active' : '' }}">
                     <span class="nav-icon">💰</span> Budget
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('expenses.index') }}" class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
                     <span class="nav-icon">🧾</span> Expenses
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('vendor-categories.index') }}" class="nav-link {{ request()->routeIs('vendor-categories.*') ? 'active' : '' }}">
                     <span class="nav-icon">🤝</span> Vendors
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{{ route('progress.index') }}" class="nav-link {{ request()->routeIs('progress.*') ? 'active' : '' }}">
                     <span class="nav-icon">📈</span> Progress
                 </a>
             </li>
         </ul>
 
         <div class="sidebar-bottom">
-            <button class="btn-new-event">+ New Event</button>
+            <a href="{{ route('events.index') }}?new=1" class="btn-new-event" style="text-decoration:none;">+ New Event</a>
             <ul class="nav-menu" style="padding: 0;">
                 <li class="nav-item">
                     <a href="#" class="nav-link">

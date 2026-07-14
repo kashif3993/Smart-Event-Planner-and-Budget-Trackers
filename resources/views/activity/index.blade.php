@@ -60,10 +60,7 @@
                 <i class="fas fa-history"></i>
             </div>
             <h3>No Activity Yet</h3>
-            <p>When you create events, add tasks, or update budgets — it will all show up here.</p>
-            <a href="{{ route('events.index') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Create Your First Event
-            </a>
+            <p>When you add tasks or update budgets — it will all show up here.</p>
         </div>
     @else
         <div class="activity-timeline">
@@ -81,13 +78,6 @@
                             <span class="activity-badge activity-badge--{{ $activity->color ?? 'blue' }}">
                                 {{ ucwords(str_replace('_', ' ', $activity->type)) }}
                             </span>
-                            @if($activity->event && $activity->event->id)
-                                <a href="{{ route('events.show', $activity->event) }}"
-                                   class="activity-event-link">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    {{ $activity->event->title }}
-                                </a>
-                            @endif
                             <span class="activity-time" title="{{ $activity->created_at->format('d M Y, h:i A') }}">
                                 <i class="fas fa-clock"></i>
                                 {{ $activity->created_at->diffForHumans() }}

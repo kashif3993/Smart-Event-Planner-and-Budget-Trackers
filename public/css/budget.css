@@ -1,0 +1,364 @@
+/* =========================================
+   Budget Analytics Module
+   (builds on the shared card/modal system in events.css)
+   ========================================= */
+
+/* ── Event / range switchers ── */
+.page-header-actions{
+    margin-bottom: 15px;
+}
+.event-switch-select {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--white);
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    max-width: 220px;
+}
+
+.event-switch-select:focus {
+    border-color: var(--primary);
+}
+
+.event-switch-select--sm {
+    padding: 7px 10px;
+    font-size: 13px;
+    max-width: 160px;
+}
+
+/* ── Stat cards ── */
+.budget-stats-grid {
+    align-items: stretch;
+}
+
+.corner-tag {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.corner-tag--danger { background: #fee2e2; color: #b91c1c; }
+.corner-tag--success { background: #d1fae5; color: #065f46; }
+
+.stat-card .chip {
+    margin-top: 4px;
+}
+
+/* ── Two-column chart grid ── */
+.budget-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.chart-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.chart-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 50px 10px;
+}
+
+.chart-empty i {
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.chart-empty p {
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+
+/* ── Donut w/ center label ── */
+.donut-wrap {
+    position: relative;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+
+.donut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    pointer-events: none;
+    max-width: 55%;
+}
+
+.donut-center-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.donut-center-value {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.2;
+}
+
+.chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dark);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-dot--light { background: #c7d2fe; }
+.legend-dot--dark { background: #4f46e5; }
+
+.legend-label {
+    flex: 1;
+}
+
+.legend-value {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* ── Actual vs Estimated comparison bars ── */
+.compare-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.compare-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.compare-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.compare-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
+.compare-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.compare-values {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.compare-track {
+    position: relative;
+    height: 22px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    overflow: visible;
+}
+
+.compare-bar-estimated,
+.compare-bar-actual {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.compare-bar-estimated {
+    background: #c7d2fe;
+}
+
+.compare-bar-actual {
+    background: #4f46e5;
+    height: 100%;
+}
+
+.compare-bar-actual.is-over {
+    background: #ef4444;
+}
+
+.compare-over-tag {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 4px;
+    padding: 2px 7px;
+}
+
+/* ── Spending trend + alerts ── */
+.budget-bottom-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 24px;
+}
+
+.trend-chart-wrap {
+    height: 260px;
+}
+
+.alerts-card {
+    border-left: 4px solid var(--danger);
+}
+
+.alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.alert-item {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.alert-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.alert-item-top strong {
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.alert-item p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.btn-review {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--danger);
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.btn-review:hover {
+    background: #dc2626;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 1200px) {
+    .budget-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1024px) {
+    .budget-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .budget-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .budget-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header-actions {
+        flex-wrap: wrap;
+    }
+
+    .page-header-actions form,
+    .page-header-actions .event-switch-select {
+        width: 100%;
+        max-width: none;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .compare-legend {
+        align-self: flex-start;
+    }
+
+    .donut-wrap {
+        height: 190px;
+    }
+
+    .trend-chart-wrap {
+        height: 200px;
+    }
+
+    .corner-tag {
+        position: static;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+}

@@ -34,14 +34,6 @@ class Activity extends Model
     }
 
     /**
-     * The event this activity is related to (optional).
-     */
-    public function event()
-    {
-        return $this->belongsTo(Event::class)->withDefault();
-    }
-
-    /**
      * Scope: latest activities first.
      */
     public function scopeRecent($query, int $limit = 20)
