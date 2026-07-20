@@ -48,6 +48,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/budget', [\App\Http\Controllers\BudgetController::class, 'index'])->name('budget.index');
     Route::get('/budget/export', [\App\Http\Controllers\BudgetController::class, 'export'])->name('budget.export');
 
+    Route::post('/events/{event}/rebalance-preview', [\App\Http\Controllers\BudgetRebalanceController::class, 'preview'])->name('budget.rebalancePreview');
+    Route::post('/events/{event}/rebalance-commit', [\App\Http\Controllers\BudgetRebalanceController::class, 'commit'])->name('budget.rebalanceCommit');
+
     Route::get('/progress', [\App\Http\Controllers\ProgressController::class, 'index'])->name('progress.index');
     Route::get('/progress/export', [\App\Http\Controllers\ProgressController::class, 'export'])->name('progress.export');
 

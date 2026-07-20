@@ -16,10 +16,25 @@
             window.budgetCategoryAllocations = {!! json_encode($categories->pluck('allocated_amount')->map(fn($v) => (float) $v)) !!};
             window.budgetTrendLabels = {!! json_encode($trendLabels) !!};
             window.budgetTrendData = {!! json_encode($trendData) !!};
+
+            window.rebalanceEventId = {{ $selectedEvent->id }};
+            window.rebalanceCurrencySymbol = {!! json_encode($selectedEvent->currencySymbol()) !!};
+            window.rebalanceTotalBudget = {{ (float) $totalBudget }};
+            window.rebalanceCategories = {!! json_encode($categories->map(fn($c) => [
+                'id' => $c->id,
+                'category_name' => $c->category_name,
+                'allocated_amount' => (float) $c->allocated_amount,
+                'spent' => $c->spent,
+                'is_over_budget' => $c->is_over_budget,
+                'is_locked' => (bool) $c->is_locked,
+            ])->values()) !!};
+            window.rebalancePreviewUrl = {!! json_encode(route('budget.rebalancePreview', $selectedEvent->id)) !!};
+            window.rebalanceCommitUrl = {!! json_encode(route('budget.rebalanceCommit', $selectedEvent->id)) !!};
         </script>
     @endif
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ asset('js/budget.js') }}?v={{ time() }}" defer></script>
+    <script src="{{ asset('js/rebalancer.js') }}?v={{ time() }}" defer></script>
 </head>
 <body>
 
@@ -256,6 +271,12 @@
                                 <p>All categories are within budget.</p>
                             </div>
                         @else
+                            @if($alerts->contains(fn($a) => $a['level'] === 'Critical'))
+                                <div class="panic-banner">
+                                    <span><i class="fas fa-bolt"></i> Budget overrun detected. Rebalance remaining categories to stay on track?</span>
+                                    <button type="button" class="btn btn-primary btn-sm" data-open-modal="rebalancerModal">Rebalance</button>
+                                </div>
+                            @endif
                             <div class="alerts-list">
                                 @foreach($alerts as $alert)
                                     <div class="alert-item">
@@ -352,6 +373,63 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        {{-- Rebalancer Sandbox modal --}}
+        <div class="modal-overlay" id="rebalancerModal">
+            <div class="modal-dialog modal-dialog--rebalancer">
+                <div class="modal-header">
+                    <h3 class="modal-title"><i class="fas fa-bolt"></i> Rebalancer Sandbox</h3>
+                    <button type="button" class="modal-close" data-close-modal="rebalancerModal">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="rebalance-intro">
+                        A non-destructive simulation. Nothing is saved until you click "Commit Changes".
+                    </p>
+
+                    <div class="rebalance-banner" id="rebalanceBanner">
+                        <div class="rebalance-banner-item">
+                            <span class="rebalance-banner-label">Over Budget By</span>
+                            <span class="rebalance-banner-value rebalance-banner-value--danger" id="rebalanceDeficitValue">—</span>
+                        </div>
+                        <div class="rebalance-banner-item">
+                            <span class="rebalance-banner-label">Flexible Liquidity Left</span>
+                            <span class="rebalance-banner-value" id="rebalanceLiquidityValue">—</span>
+                        </div>
+                    </div>
+
+                    <div class="rebalance-strategy-toggles" id="rebalanceStrategyToggles">
+                        <label class="strategy-toggle">
+                            <input type="radio" name="rebalance_strategy" value="proportional" checked>
+                            <span>Proportional</span>
+                        </label>
+                        <label class="strategy-toggle">
+                            <input type="radio" name="rebalance_strategy" value="targeted">
+                            <span>Targeted</span>
+                        </label>
+                        <label class="strategy-toggle">
+                            <input type="radio" name="rebalance_strategy" value="ai">
+                            <span>AI-Suggested</span>
+                        </label>
+                    </div>
+
+                    <div id="rebalanceStatus" class="rebalance-status" style="display:none;"></div>
+
+                    <div class="rebalance-chart-wrap">
+                        <canvas id="rebalanceChart"></canvas>
+                    </div>
+
+                    <div class="rebalance-category-list" id="rebalanceCategoryList"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-close-modal="rebalancerModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="rebalanceCommitBtn">
+                        <i class="fas fa-check"></i> Commit Changes
+                    </button>
+                </div>
             </div>
         </div>
     @endif
