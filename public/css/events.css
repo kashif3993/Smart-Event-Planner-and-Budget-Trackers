@@ -474,15 +474,20 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    display: block;
+    display: flex;
+    flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .event-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+.event-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
 }
 
 .event-card-media {
@@ -542,6 +547,46 @@
     font-size: 14px;
     font-weight: 700;
     margin-top: 2px;
+}
+
+.event-card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.event-card-delete-form {
+    margin: 0;
+    display: contents;
+}
+
+.event-icon-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background-color: transparent;
+    color: var(--text-muted);
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.event-icon-btn:hover {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.event-icon-btn--danger:hover {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
 }
 
 /* ===== Responsive ===== */

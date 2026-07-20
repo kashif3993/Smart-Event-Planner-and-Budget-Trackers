@@ -1,3 +1,13 @@
+// If the page is restored from the browser's back/forward cache, force a fresh
+// reload from the server. Otherwise modal forms (New Event, Add Task, etc.) show
+// whatever was still typed in them before the user navigated away, instead of
+// the blank/db-correct values the server would normally render.
+window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+        window.location.reload();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
@@ -57,7 +67,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Generic modal open/close (event + task modals)
     function openModal(id) {
         const modal = document.getElementById(id);
-        if (modal) modal.classList.add('open');
+        if (!modal) return;
+
+        // Reset every form inside the modal back to the values the server
+        // rendered on page load (blank for "create" forms, the record's saved
+        // values for "edit" forms). Without this, closing a modal after typing
+        // into it (or submitting it) leaves the old text sitting in the inputs
+        // the next time the modal is opened, since the DOM is never destroyed.
+        modal.querySelectorAll('.venue-image-preview[data-dynamic="true"]').forEach(function(el) {
+            el.remove();
+        });
+        modal.querySelectorAll('form').forEach(function(form) {
+            form.reset();
+        });
+
+        modal.classList.add('open');
     }
 
     function closeModal(id) {
@@ -89,8 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Auto-open the create-event modal when navigated to with ?new=1 (sidebar "+ New Event" button)
-    if (new URLSearchParams(window.location.search).get('new') === '1' && document.getElementById('eventModal')) {
+    // Auto-open the event modal when navigated to with ?new=1 (sidebar "+ New Event"
+    // button, create form) or ?edit=1 (event card "Edit" icon, edit form on the show page)
+    const pageParams = new URLSearchParams(window.location.search);
+    if ((pageParams.get('new') === '1' || pageParams.get('edit') === '1') && document.getElementById('eventModal')) {
         openModal('eventModal');
     }
 
@@ -117,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!preview) {
                 preview = document.createElement('img');
                 preview.className = 'venue-image-preview';
+                preview.dataset.dynamic = 'true';
                 venueImageInput.parentElement.appendChild(preview);
             }
             preview.src = URL.createObjectURL(file);

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\AiTaskGeneratorNotConfiguredException;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
-use App\Services\AiTaskGeneratorService;
 use App\Services\VendorCategorySuggestionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,7 +61,6 @@ class EventController extends Controller
 
     public function store(
         StoreEventRequest $request,
-        AiTaskGeneratorService $taskGenerator,
         VendorCategorySuggestionService $categorySuggester
     ): RedirectResponse {
         $data = $request->validated();
@@ -78,32 +75,10 @@ class EventController extends Controller
 
         $categorySuggester->suggestFor($event);
 
-        // The AI call below can legitimately take longer than PHP's default
-        // execution limit once retries are factored in — extend it rather than
-        // let the whole "create event" request die with a fatal error.
-        set_time_limit(120);
-
-        $tasksGenerated = 0;
-        try {
-            $result = $taskGenerator->generateTasks($event);
-
-            $tasksGenerated = $taskGenerator->createTasks($event, $result['tasks'])->count();
-
-            if (! empty($result['insight'])) {
-                $event->update(['ai_insight' => $result['insight']]);
-            }
-        } catch (AiTaskGeneratorNotConfiguredException) {
-            // AI isn't configured in this environment — the event still gets its
-            // suggested vendor categories, and tasks can be added manually or via
-            // the "Generate with AI" button on the event page once it is configured.
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        $message = $event->event_name.' has been created';
-        $message .= $tasksGenerated > 0
-            ? ", with {$tasksGenerated} AI-generated starter tasks and suggested vendor categories."
-            : ', with suggested vendor categories.';
+        // AI task generation is not run here anymore — it's a slow external API
+        // call that used to make event creation take several seconds. Tasks can
+        // be added manually or via the "Generate with AI" button on the event page.
+        $message = $event->event_name.' has been created, with suggested vendor categories.';
 
         return redirect()->route('events.show', $event)->with('success', $message);
     }

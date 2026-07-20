@@ -51,43 +51,62 @@
             @else
                 <div class="events-grid">
                     @foreach ($events as $event)
-                        <a href="{{ route('events.show', $event) }}" class="event-card">
-                            <div class="event-card-media">
-                                @if ($event->venue_image)
-                                    <img src="{{ asset('storage/'.$event->venue_image) }}" alt="{{ $event->event_name }}">
-                                @else
-                                    <div class="venue-placeholder"><i class="fas fa-champagne-glasses"></i></div>
-                                @endif
-                                <span class="chip event-card-status status-{{ strtolower(str_replace(' ', '-', $event->status)) }}">{{ $event->status }}</span>
-                            </div>
-                            <div class="event-card-body">
-                                <h3 class="event-card-title">{{ $event->event_name }}</h3>
-                                <div class="event-card-meta">
-                                    <i class="fas fa-calendar"></i> {{ $event->event_date->format('M d, Y') }}
-                                    @if ($event->location)
-                                        • <i class="fas fa-map-marker-alt"></i> {{ $event->location }}
+                        <div class="event-card">
+                            <a href="{{ route('events.show', $event) }}" class="event-card-link">
+                                <div class="event-card-media">
+                                    @if ($event->venue_image)
+                                        <img src="{{ asset('storage/'.$event->venue_image) }}" alt="{{ $event->event_name }}">
+                                    @else
+                                        <div class="venue-placeholder"><i class="fas fa-champagne-glasses"></i></div>
                                     @endif
+                                    <span class="chip event-card-status status-{{ strtolower(str_replace(' ', '-', $event->status)) }}">{{ $event->status }}</span>
                                 </div>
-
-                                <div class="event-card-stats">
-                                    <div>
-                                        <span class="event-card-stat-label">Countdown</span>
-                                        <span class="event-card-stat-value">
-                                            {{ $event->days_remaining >= 0 ? $event->days_remaining.' days' : 'Passed' }}
-                                        </span>
+                                <div class="event-card-body">
+                                    <h3 class="event-card-title">{{ $event->event_name }}</h3>
+                                    <div class="event-card-meta">
+                                        <i class="fas fa-calendar"></i> {{ $event->event_date->format('M d, Y') }}
+                                        @if ($event->location)
+                                            • <i class="fas fa-map-marker-alt"></i> {{ $event->location }}
+                                        @endif
                                     </div>
-                                    <div>
-                                        <span class="event-card-stat-label">Guests</span>
-                                        <span class="event-card-stat-value">{{ $event->guest_count }}{{ $event->max_guests ? '/'.$event->max_guests : '' }}</span>
-                                    </div>
-                                </div>
 
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" style="width: {{ $event->progress }}%;"></div>
+                                    <div class="event-card-stats">
+                                        <div>
+                                            <span class="event-card-stat-label">Countdown</span>
+                                            <span class="event-card-stat-value">
+                                                {{ $event->days_remaining >= 0 ? $event->days_remaining.' days' : 'Passed' }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="event-card-stat-label">Guests</span>
+                                            <span class="event-card-stat-value">{{ $event->guest_count }}{{ $event->max_guests ? '/'.$event->max_guests : '' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" style="width: {{ $event->progress }}%;"></div>
+                                    </div>
+                                    <div class="stat-desc">{{ $event->progress }}% tasks complete</div>
                                 </div>
-                                <div class="stat-desc">{{ $event->progress }}% tasks complete</div>
+                            </a>
+
+                            <div class="event-card-actions">
+                                <a href="{{ route('events.show', $event) }}" class="event-icon-btn" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('events.show', $event) }}?edit=1" class="event-icon-btn" title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <form action="{{ route('events.destroy', $event) }}" method="POST" class="event-card-delete-form"
+                                      onsubmit="return confirm('Delete this event and all of its tasks? This cannot be undone.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="event-icon-btn event-icon-btn--danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </div>
-                        </a>
+                        </div>
                     @endforeach
                 </div>
             @endif
@@ -95,7 +114,7 @@
         </div>
     </main>
 
-    @include('events.partials.event-form-modal')
+    @include('events.partials.event-form-modal', ['event' => null])
 
 </body>
 </html>
