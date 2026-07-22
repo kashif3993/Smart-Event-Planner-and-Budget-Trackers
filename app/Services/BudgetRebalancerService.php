@@ -13,61 +13,33 @@ class BudgetRebalancerService
     protected const TOOL_NAME = 'suggest_slash_priorities';
 
     /**
-     * Build a rebalance proposal for the given event.
+     * The only piece of the "Rebalancer Sandbox" that genuinely needs the
+     * server: ranking each Mutable category by how safe it is to cut, via an
+     * LLM call. Everything else (Proportional, Targeted, and applying these
+     * priorities once fetched) happens entirely in frontend local state per
+     * the PRD's "no API calls" constraint on the interactive sandbox — see
+     * rebalancer.js. The frontend fetches this once per modal session and
+     * reuses it for every subsequent lock toggle / strategy switch.
      *
-     * Over-budget categories get bumped up to match what they've actually
-     * spent (so they stop showing as over budget), and that same amount is
-     * pulled back out of the remaining Mutable categories according to the
-     * chosen strategy. The allocated total across all categories never
-     * changes — it's only redistributed, matching the event's budget cap.
-     *
-     * @param  array<int, int>  $lockedCategoryIds  category ids the sandbox is temporarily locking, on top of any persisted is_locked flag
-     * @return array<int, array<string, mixed>>
+     * @return array<int, array{id: int, category_name: string, priority: int}>
      */
-    public function buildPreview(Event $event, array $lockedCategoryIds, string $strategy): array
+    public function fetchMutableCategoryPriorities(Event $event): array
     {
         $categories = $this->categoriesWithSpend($event);
 
-        $overBudget = $categories->filter(fn (array $c) => $c['spent'] > $c['allocated_amount']);
+        $mutable = $categories->reject(fn (array $c) => $c['spent'] > $c['allocated_amount'] || $c['has_paid_expense']);
 
-        $mutable = $categories->reject(function (array $c) use ($overBudget, $lockedCategoryIds) {
-            return $overBudget->has($c['id'])
-                || $c['is_locked']
-                || $c['has_paid_expense']
-                || in_array($c['id'], $lockedCategoryIds, true);
-        });
+        if ($mutable->isEmpty()) {
+            return [];
+        }
 
-        $deficit = (float) $overBudget->sum(fn (array $c) => $c['spent'] - $c['allocated_amount']);
+        $priorities = $this->fetchAiSlashPriorities($event, $mutable);
 
-        $reductions = match ($strategy) {
-            'targeted' => $this->targetedReductions($mutable, $deficit),
-            'ai' => $this->aiOptimizedReductions($event, $mutable, $deficit),
-            default => $this->proportionalReductions($mutable, $deficit),
-        };
-
-        $totalBudget = (float) $event->total_budget;
-
-        return $categories->map(function (array $c) use ($overBudget, $reductions, $totalBudget) {
-            $newAllocated = $c['allocated_amount'];
-
-            if ($overBudget->has($c['id'])) {
-                $newAllocated = $c['spent'];
-            } elseif (isset($reductions[$c['id']])) {
-                $newAllocated = max($c['spent'], $c['allocated_amount'] - $reductions[$c['id']]);
-            }
-
-            return [
-                'id' => $c['id'],
-                'category_name' => $c['category_name'],
-                'allocated_amount' => round($c['allocated_amount'], 2),
-                'suggested_allocated_amount' => round($newAllocated, 2),
-                'suggested_budget_percentage' => $totalBudget > 0 ? round(($newAllocated / $totalBudget) * 100, 2) : 0,
-                'spent' => round($c['spent'], 2),
-                'is_over_budget' => $overBudget->has($c['id']),
-                'is_locked' => $c['is_locked'],
-                'is_immutable' => $overBudget->has($c['id']) || $c['is_locked'] || $c['has_paid_expense'],
-            ];
-        })->values()->all();
+        return $mutable->map(fn (array $c) => [
+            'id' => $c['id'],
+            'category_name' => $c['category_name'],
+            'priority' => max(1, min(5, (int) ($priorities[$c['id']] ?? ($c['ai_slash_priority'] ?: 3)))),
+        ])->values()->all();
     }
 
     /**
@@ -89,103 +61,6 @@ class BudgetRebalancerService
                 'ai_slash_priority' => $category->ai_slash_priority,
             ])
             ->keyBy('id');
-    }
-
-    /**
-     * Proportional strategy: the deficit is split across Mutable categories
-     * based on their current share of the mutable total's allocation.
-     *
-     * @return array<int, float>
-     */
-    protected function proportionalReductions(Collection $mutable, float $deficit): array
-    {
-        $totalAllocated = (float) $mutable->sum('allocated_amount');
-        if ($totalAllocated <= 0 || $deficit <= 0) {
-            return [];
-        }
-
-        $reductions = [];
-        foreach ($mutable as $c) {
-            $share = $c['allocated_amount'] / $totalAllocated;
-            $headroom = $c['allocated_amount'] - $c['spent'];
-            $reductions[$c['id']] = min($deficit * $share, $headroom);
-        }
-
-        return $reductions;
-    }
-
-    /**
-     * Targeted strategy: instead of spreading the cut thin across every
-     * category, drain it from whichever Mutable categories have the most
-     * unspent headroom first, only spilling into the next one once the
-     * biggest is tapped out.
-     *
-     * @return array<int, float>
-     */
-    protected function targetedReductions(Collection $mutable, float $deficit): array
-    {
-        if ($deficit <= 0) {
-            return [];
-        }
-
-        $reductions = [];
-        $remaining = $deficit;
-
-        $sorted = $mutable->sortByDesc(fn (array $c) => $c['allocated_amount'] - $c['spent']);
-
-        foreach ($sorted as $c) {
-            if ($remaining <= 0) {
-                break;
-            }
-
-            $headroom = $c['allocated_amount'] - $c['spent'];
-            $take = min($headroom, $remaining);
-
-            if ($take > 0) {
-                $reductions[$c['id']] = $take;
-                $remaining -= $take;
-            }
-        }
-
-        return $reductions;
-    }
-
-    /**
-     * AI-Optimized strategy: ask the LLM to rank each Mutable category by how
-     * safe it is to cut (1 = slash first, 5 = protect), then weight the
-     * deficit split so lower-ranked categories (e.g. Decor, Entertainment)
-     * absorb more of the cut than higher-ranked ones (e.g. Catering, Venue).
-     *
-     * @return array<int, float>
-     */
-    protected function aiOptimizedReductions(Event $event, Collection $mutable, float $deficit): array
-    {
-        if ($mutable->isEmpty() || $deficit <= 0) {
-            return [];
-        }
-
-        $priorities = $this->fetchAiSlashPriorities($event, $mutable);
-
-        $weights = [];
-        foreach ($mutable as $c) {
-            $priority = $priorities[$c['id']] ?? ($c['ai_slash_priority'] ?: 3);
-            $priority = max(1, min(5, (int) $priority));
-            $weights[$c['id']] = 6 - $priority;
-        }
-
-        $totalWeight = array_sum($weights);
-        if ($totalWeight <= 0) {
-            return $this->proportionalReductions($mutable, $deficit);
-        }
-
-        $reductions = [];
-        foreach ($mutable as $c) {
-            $share = $weights[$c['id']] / $totalWeight;
-            $headroom = $c['allocated_amount'] - $c['spent'];
-            $reductions[$c['id']] = min($deficit * $share, $headroom);
-        }
-
-        return $reductions;
     }
 
     /**

@@ -27,8 +27,9 @@
                 'spent' => $c->spent,
                 'is_over_budget' => $c->is_over_budget,
                 'is_locked' => (bool) $c->is_locked,
+                'has_paid_expense' => $c->has_paid_expense,
             ])->values()) !!};
-            window.rebalancePreviewUrl = {!! json_encode(route('budget.rebalancePreview', $selectedEvent->id)) !!};
+            window.rebalanceAiPrioritiesUrl = {!! json_encode(route('budget.rebalanceAiPriorities', $selectedEvent->id)) !!};
             window.rebalanceCommitUrl = {!! json_encode(route('budget.rebalanceCommit', $selectedEvent->id)) !!};
         </script>
     @endif
@@ -286,7 +287,12 @@
                                         </div>
                                         <p>{{ $alert['message'] }}</p>
                                         @if($alert['level'] === 'Critical')
-                                            <a href="{{ route('vendor-categories.index', ['event' => $selectedEvent->id]) }}" class="btn-review">Review Items</a>
+                                            <div class="alert-item-actions">
+                                                <button type="button" class="chip chip-danger chip-action" data-open-modal="rebalancerModal">
+                                                    <i class="fas fa-scale-balanced"></i> Rebalance
+                                                </button>
+                                                <a href="{{ route('vendor-categories.index', ['event' => $selectedEvent->id]) }}" class="btn-review">Review Items</a>
+                                            </div>
                                         @endif
                                     </div>
                                 @endforeach

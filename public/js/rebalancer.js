@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
-    var openBtn = document.querySelector('[data-open-modal="rebalancerModal"]');
+    var openBtns = document.querySelectorAll('[data-open-modal="rebalancerModal"]');
     var modal = document.getElementById('rebalancerModal');
-    if (!openBtn || !modal) return;
+    if (!openBtns.length || !modal) return;
 
     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     var currency = window.rebalanceCurrencySymbol || '$';
-    var originalCategories = window.rebalanceCategories || [];
+    var totalBudget = Number(window.rebalanceTotalBudget || 0);
+    var baseCategories = window.rebalanceCategories || [];
 
     var strategyToggles = document.getElementById('rebalanceStrategyToggles');
     var statusBox = document.getElementById('rebalanceStatus');
@@ -15,8 +16,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var commitBtn = document.getElementById('rebalanceCommitBtn');
     var chartCanvas = document.getElementById('rebalanceChart');
 
+    // Fresh per sandbox session (reset on every modal open) — the PRD's "State
+    // Isolation" requirement: all tinkering happens in this local snapshot,
+    // nothing touches the server until Commit.
+    var sandboxCategories = [];
     var sandboxLockedIds = [];
     var currentStrategy = 'proportional';
+    var aiPriorities = null; // { [categoryId]: priority } — fetched once per session, then reused locally
     var latestProposal = [];
     var chart = null;
 
@@ -24,11 +30,15 @@ document.addEventListener('DOMContentLoaded', function () {
         return currency + Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
 
+    function round2(value) {
+        return Math.round((value + Number.EPSILON) * 100) / 100;
+    }
+
     function renderBanner() {
         var deficit = 0;
         var liquidity = 0;
 
-        originalCategories.forEach(function (c) {
+        sandboxCategories.forEach(function (c) {
             if (c.is_over_budget) {
                 deficit += (c.spent - c.allocated_amount);
             } else {
@@ -38,6 +48,126 @@ document.addEventListener('DOMContentLoaded', function () {
 
         deficitValueEl.textContent = money(deficit);
         liquidityValueEl.textContent = money(liquidity);
+    }
+
+    /* ── Pure local math, mirroring BudgetRebalancerService exactly ──
+       (proportional / targeted / AI-weighted reduction distribution) so the
+       interactive chart never needs a round trip except the one-time AI
+       priorities fetch. */
+
+    function proportionalReductions(mutable, deficit) {
+        var totalAllocated = mutable.reduce(function (sum, c) { return sum + c.allocated_amount; }, 0);
+        var reductions = {};
+        if (totalAllocated <= 0 || deficit <= 0) return reductions;
+
+        mutable.forEach(function (c) {
+            var share = c.allocated_amount / totalAllocated;
+            var headroom = c.allocated_amount - c.spent;
+            reductions[c.id] = Math.min(deficit * share, headroom);
+        });
+
+        return reductions;
+    }
+
+    function targetedReductions(mutable, deficit) {
+        var reductions = {};
+        if (deficit <= 0) return reductions;
+
+        var remaining = deficit;
+        var sorted = mutable.slice().sort(function (a, b) {
+            return (b.allocated_amount - b.spent) - (a.allocated_amount - a.spent);
+        });
+
+        for (var i = 0; i < sorted.length; i++) {
+            if (remaining <= 0) break;
+
+            var c = sorted[i];
+            var headroom = c.allocated_amount - c.spent;
+            var take = Math.min(headroom, remaining);
+
+            if (take > 0) {
+                reductions[c.id] = take;
+                remaining -= take;
+            }
+        }
+
+        return reductions;
+    }
+
+    function aiWeightedReductions(mutable, deficit, priorities) {
+        if (!mutable.length || deficit <= 0) return {};
+
+        var weights = {};
+        mutable.forEach(function (c) {
+            var priority = (priorities && priorities[c.id]) || 3;
+            priority = Math.max(1, Math.min(5, priority));
+            weights[c.id] = 6 - priority;
+        });
+
+        var totalWeight = Object.values(weights).reduce(function (a, b) { return a + b; }, 0);
+        if (totalWeight <= 0) return proportionalReductions(mutable, deficit);
+
+        var reductions = {};
+        mutable.forEach(function (c) {
+            var share = weights[c.id] / totalWeight;
+            var headroom = c.allocated_amount - c.spent;
+            reductions[c.id] = Math.min(deficit * share, headroom);
+        });
+
+        return reductions;
+    }
+
+    /**
+     * Builds the full proposal array from local state — the frontend
+     * equivalent of BudgetRebalancerService::buildPreview(). Returns null
+     * only when the AI strategy is selected but priorities haven't been
+     * fetched yet (caller fetches once, then calls this again from cache).
+     */
+    function computeProposal() {
+        var overBudget = {};
+        sandboxCategories.forEach(function (c) {
+            if (c.spent > c.allocated_amount) overBudget[c.id] = true;
+        });
+
+        var mutable = sandboxCategories.filter(function (c) {
+            return !overBudget[c.id] && !c.is_locked && !c.has_paid_expense && sandboxLockedIds.indexOf(c.id) === -1;
+        });
+
+        var deficit = sandboxCategories.reduce(function (sum, c) {
+            return overBudget[c.id] ? sum + (c.spent - c.allocated_amount) : sum;
+        }, 0);
+
+        var reductions;
+        if (currentStrategy === 'targeted') {
+            reductions = targetedReductions(mutable, deficit);
+        } else if (currentStrategy === 'ai') {
+            if (!aiPriorities) return null;
+            reductions = aiWeightedReductions(mutable, deficit, aiPriorities);
+        } else {
+            reductions = proportionalReductions(mutable, deficit);
+        }
+
+        return sandboxCategories.map(function (c) {
+            var newAllocated = c.allocated_amount;
+
+            if (overBudget[c.id]) {
+                newAllocated = c.spent;
+            } else if (reductions[c.id] !== undefined) {
+                newAllocated = Math.max(c.spent, c.allocated_amount - reductions[c.id]);
+            }
+
+            return {
+                id: c.id,
+                category_name: c.category_name,
+                allocated_amount: round2(c.allocated_amount),
+                suggested_allocated_amount: round2(newAllocated),
+                suggested_budget_percentage: totalBudget > 0 ? round2((newAllocated / totalBudget) * 100) : 0,
+                spent: round2(c.spent),
+                is_over_budget: !!overBudget[c.id],
+                is_locked: c.is_locked,
+                is_immutable: !!overBudget[c.id] || c.is_locked || c.has_paid_expense
+            };
+        });
     }
 
     function renderChart(categories) {
@@ -103,62 +233,102 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function loadPreview() {
+    function renderProposal(proposal) {
+        statusBox.style.display = 'none';
+        latestProposal = proposal;
+        renderChart(proposal);
+        renderCategoryList(proposal);
+        commitBtn.disabled = false;
+    }
+
+    /**
+     * Recomputes and re-renders from local state. Only reaches the network
+     * when the AI strategy is active and priorities haven't been fetched yet
+     * for this sandbox session — every other change (strategy switch between
+     * cached options, lock toggles) is instant, no API call.
+     */
+    function refresh() {
+        var proposal = computeProposal();
+
+        if (proposal) {
+            renderProposal(proposal);
+            return;
+        }
+
+        // Only "ai" with no cached priorities yet falls through to here.
         statusBox.style.display = 'block';
         statusBox.className = 'rebalance-status is-loading';
-        statusBox.textContent = currentStrategy === 'ai'
-            ? 'Asking the AI which categories are safest to trim...'
-            : 'Recalculating proposed allocations...';
+        statusBox.textContent = 'Asking the AI which categories are safest to trim...';
         commitBtn.disabled = true;
 
-        fetch(window.rebalancePreviewUrl, {
+        fetch(window.rebalanceAiPrioritiesUrl, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                strategy: currentStrategy,
-                locked_category_ids: sandboxLockedIds
-            })
+            body: JSON.stringify({})
         })
             .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
             .then(function (result) {
                 if (!result.ok || !result.data.success) {
                     statusBox.className = 'rebalance-status is-error';
-                    statusBox.textContent = result.data.message || 'Could not build a rebalance proposal.';
+                    statusBox.textContent = (result.data && result.data.message) || 'Could not fetch AI priorities.';
                     commitBtn.disabled = true;
                     return;
                 }
 
-                statusBox.style.display = 'none';
-                latestProposal = result.data.categories;
-                renderChart(latestProposal);
-                renderCategoryList(latestProposal);
-                commitBtn.disabled = false;
+                aiPriorities = {};
+                (result.data.priorities || []).forEach(function (p) {
+                    aiPriorities[p.id] = p.priority;
+                });
+
+                // Now that priorities are cached, this and every subsequent
+                // AI recalculation (lock toggles, switching back to AI) is local.
+                renderProposal(computeProposal());
             })
             .catch(function () {
                 statusBox.className = 'rebalance-status is-error';
-                statusBox.textContent = 'Could not build a rebalance proposal. Please try again.';
+                statusBox.textContent = 'Could not fetch AI priorities. Please try again.';
                 commitBtn.disabled = true;
             });
     }
 
-    openBtn.addEventListener('click', function () {
-        sandboxLockedIds = originalCategories.filter(function (c) { return c.is_locked; }).map(function (c) { return c.id; });
+    function openSandbox() {
+        // Deep-copy the current event's categories into local state — the
+        // sandbox never reads or writes window.rebalanceCategories directly.
+        sandboxCategories = baseCategories.map(function (c) {
+            return {
+                id: c.id,
+                category_name: c.category_name,
+                allocated_amount: c.allocated_amount,
+                spent: c.spent,
+                is_over_budget: c.is_over_budget,
+                is_locked: c.is_locked,
+                has_paid_expense: c.has_paid_expense
+            };
+        });
+
+        sandboxLockedIds = sandboxCategories.filter(function (c) { return c.is_locked; }).map(function (c) { return c.id; });
         currentStrategy = 'proportional';
+        aiPriorities = null;
+
         var proportionalRadio = strategyToggles.querySelector('input[value="proportional"]');
         if (proportionalRadio) proportionalRadio.checked = true;
 
         renderBanner();
-        loadPreview();
+        refresh();
+    }
+
+    openBtns.forEach(function (btn) {
+        btn.addEventListener('click', openSandbox);
     });
 
     strategyToggles.addEventListener('change', function (e) {
         if (e.target.name !== 'rebalance_strategy') return;
         currentStrategy = e.target.value;
-        loadPreview();
+        refresh();
     });
 
     categoryListEl.addEventListener('change', function (e) {
@@ -173,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sandboxLockedIds.splice(index, 1);
         }
 
-        loadPreview();
+        refresh();
     });
 
     commitBtn.addEventListener('click', function () {

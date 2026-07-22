@@ -13,25 +13,18 @@ use Illuminate\Support\Facades\Auth;
 class BudgetRebalanceController extends Controller
 {
     /**
-     * The "Rebalancer Sandbox" preview — computes proposed allocations for
-     * the given strategy without writing anything to the database.
+     * The only sandbox interaction that needs the server: ranking Mutable
+     * categories by how safe they are to cut, via an LLM call. The frontend
+     * fetches this once per sandbox session and caches it — every Proportional
+     * / Targeted calculation and every lock-toggle reacts entirely from local
+     * state (see rebalancer.js), with no further requests here.
      */
-    public function preview(Request $request, Event $event, BudgetRebalancerService $service): JsonResponse
+    public function aiPriorities(Event $event, BudgetRebalancerService $service): JsonResponse
     {
         $this->authorizeEvent($event);
 
-        $validated = $request->validate([
-            'locked_category_ids' => ['array'],
-            'locked_category_ids.*' => ['integer'],
-            'strategy' => ['required', 'string', 'in:proportional,targeted,ai'],
-        ]);
-
         try {
-            $categories = $service->buildPreview(
-                $event,
-                $validated['locked_category_ids'] ?? [],
-                $validated['strategy']
-            );
+            $priorities = $service->fetchMutableCategoryPriorities($event);
         } catch (AiBudgetRebalancerNotConfiguredException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (RequestException $e) {
@@ -43,10 +36,10 @@ class BudgetRebalanceController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return response()->json(['success' => false, 'message' => 'Could not build a rebalance proposal. Please try again.'], 502);
+            return response()->json(['success' => false, 'message' => 'Could not fetch AI priorities. Please try again.'], 502);
         }
 
-        return response()->json(['success' => true, 'categories' => $categories]);
+        return response()->json(['success' => true, 'priorities' => $priorities]);
     }
 
     /**

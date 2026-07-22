@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\TaskController;
@@ -15,9 +17,14 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/register',  [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
-    
+
     Route::get('/login',     [LoginController::class, 'create'])->name('login');
     Route::post('/login',    [LoginController::class, 'store'])->name('login.store');
+
+    Route::get('/forgot-password',  [ForgotPasswordController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email');
+    Route::get('/reset-password', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
 });
 
 /* ── Protected ── */
@@ -53,7 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/budget', [\App\Http\Controllers\BudgetController::class, 'index'])->name('budget.index');
     Route::get('/budget/export', [\App\Http\Controllers\BudgetController::class, 'export'])->name('budget.export');
 
-    Route::post('/events/{event}/rebalance-preview', [\App\Http\Controllers\BudgetRebalanceController::class, 'preview'])->name('budget.rebalancePreview');
+    Route::post('/events/{event}/rebalance-ai-priorities', [\App\Http\Controllers\BudgetRebalanceController::class, 'aiPriorities'])->name('budget.rebalanceAiPriorities');
     Route::post('/events/{event}/rebalance-commit', [\App\Http\Controllers\BudgetRebalanceController::class, 'commit'])->name('budget.rebalanceCommit');
 
     Route::get('/progress', [\App\Http\Controllers\ProgressController::class, 'index'])->name('progress.index');

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sign in to your Smart Event Planner account.">
-    <title>Sign In — Smart Event Planner</title>
+    <meta name="description" content="Choose a new Smart Event Planner password.">
+    <title>Reset Password — Smart Event Planner</title>
     <link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
 </head>
@@ -19,9 +19,9 @@
                     <div class="panel-logo-icon">🗓️</div>
                     <span>Smart Event Planner</span>
                 </div>
-                <h1 class="panel-headline">Welcome<br>Back.</h1>
+                <h1 class="panel-headline">Choose a New<br>Password.</h1>
                 <p class="panel-sub">
-                    Sign in to continue managing your premium corporate events &amp; weddings seamlessly.
+                    Pick something strong you haven't used before — at least 8 characters.
                 </p>
                 <div class="panel-divider"></div>
                 <ul class="features-list">
@@ -47,10 +47,9 @@
 
         {{-- ── FORM PANEL ── --}}
         <div class="auth-form-wrap">
-            <h2 class="form-title">Sign In</h2>
+            <h2 class="form-title">Reset Password</h2>
             <div class="title-underline"></div>
 
-            {{-- Validation errors --}}
             @if ($errors->any())
                 <div class="alert alert-error" role="alert">
                     <span>⚠️</span>
@@ -62,58 +61,63 @@
                 </div>
             @endif
 
-            <form id="loginForm" method="POST" action="{{ route('login.store') }}" novalidate>
+            <form method="POST" action="{{ route('password.update') }}" novalidate>
                 @csrf
 
-                {{-- Email --}}
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email"
                            id="email"
                            name="email"
                            placeholder="john@eventpro.com"
-                           value="{{ old('email') }}"
+                           value="{{ old('email', $email) }}"
                            autocomplete="email"
                            class="{{ $errors->has('email') ? 'is-invalid' : '' }}"
                            required>
                 </div>
 
-                {{-- Password --}}
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password">New Password</label>
                     <div class="input-wrap">
                         <input type="password"
                                id="password"
                                name="password"
-                               placeholder="Enter your password"
-                               autocomplete="current-password"
+                               placeholder="At least 8 characters"
+                               autocomplete="new-password"
                                class="{{ $errors->has('password') ? 'is-invalid' : '' }}"
                                required>
                         <button type="button" class="pw-toggle" id="pwToggle" onclick="togglePw('password','pwToggle')" aria-label="Toggle password visibility">
-                            <svg id="pwIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
                             </svg>
                         </button>
                     </div>
                 </div>
 
-                {{-- Options --}}
-                <div class="options-row">
-                    <div class="remember-wrap">
-                        <input type="checkbox" id="remember" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
-                        <label for="remember">Remember me</label>
+                <div class="form-group">
+                    <label for="password_confirmation">Confirm New Password</label>
+                    <div class="input-wrap">
+                        <input type="password"
+                               id="password_confirmation"
+                               name="password_confirmation"
+                               placeholder="Re-enter your new password"
+                               autocomplete="new-password"
+                               required>
+                        <button type="button" class="pw-toggle" id="pwToggle2" onclick="togglePw('password_confirmation','pwToggle2')" aria-label="Toggle password visibility">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
                     </div>
-                    <a href="{{ route('password.request') }}" class="forgot-link">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn-submit" id="submitBtn">
-                    <span id="btnText">Sign In →</span>
-                    <span class="btn-spinner" id="btnSpinner"></span>
+                <button type="submit" class="btn-submit">
+                    <span>Reset Password →</span>
                 </button>
             </form>
 
             <p class="signup-link">
-                Don't have an account? <a href="{{ route('register') }}">Create Account</a>
+                Remembered your password? <a href="{{ route('login') }}">Back to Sign In</a>
             </p>
         </div>
 
