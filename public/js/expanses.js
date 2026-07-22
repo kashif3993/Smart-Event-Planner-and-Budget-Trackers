@@ -10,15 +10,8 @@ function closeExpenseModal() {
     document.body.style.overflow = '';
 }
 
-function handleModalClick(event) {
-    if (event.target === document.getElementById('expenseModal')) {
-        closeExpenseModal();
-    }
-}
-
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-        closeExpenseModal();
         closeAllRowMenus();
     }
 });
@@ -107,7 +100,7 @@ function loadCategories(eventId, selectedCategoryId) {
         data.forEach(function (cat) {
             var opt = document.createElement('option');
             opt.value       = cat.id;
-            opt.textContent = cat.category_name;
+            opt.textContent = cat.vendor_name ? cat.category_name + ' - ' + cat.vendor_name : cat.category_name;
             select.appendChild(opt);
         });
 

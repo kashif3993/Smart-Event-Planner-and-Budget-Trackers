@@ -16,6 +16,8 @@ class AiTaskGeneratorService
 
     protected const TOOL_NAME = 'build_task_checklist';
 
+    protected const SINGLE_TASK_TOOL_NAME = 'suggest_task';
+
     /**
      * Lead-time thresholds (days until the event) shared with anything else that
      * needs to reflect how compressed the planning window is — e.g. the Timeline
@@ -122,6 +124,123 @@ class AiTaskGeneratorService
         }
 
         return $created->pluck('task');
+    }
+
+    /**
+     * Ask the AI for exactly one new task to add next — used by the "Suggest with AI"
+     * button in the Add/Edit Task modals, as a lighter-weight alternative to the full
+     * checklist generator. Returns a normalized task array, or [] if the AI declined
+     * (e.g. it judged the checklist already complete).
+     *
+     * @return array<string, mixed>
+     */
+    public function suggestTask(Event $event): array
+    {
+        $baseUrl = config('services.ai_task_generator.url');
+        $key = config('services.ai_task_generator.key');
+        $model = config('services.ai_task_generator.model');
+
+        if (! $baseUrl || ! $key) {
+            throw new AiTaskGeneratorNotConfiguredException();
+        }
+
+        $url = rtrim($baseUrl, '/') . "/models/{$model}:generateContent";
+
+        $response = Http::withHeaders([
+                'x-goog-api-key' => $key,
+            ])
+            ->timeout(30)
+            ->acceptJson()
+            ->retry(2, 2000, function ($exception) {
+                return $exception instanceof \Illuminate\Http\Client\RequestException
+                    && in_array($exception->response->status(), [429, 503], true);
+            }, throw: false)
+            ->post($url, [
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => $this->buildSingleTaskPrompt($event)]
+                        ]
+                    ]
+                ],
+                'tools' => [
+                    ['functionDeclarations' => [$this->singleTaskTool()]]
+                ],
+                'toolConfig' => [
+                    'functionCallingConfig' => [
+                        'mode' => 'ANY',
+                        'allowedFunctionNames' => [self::SINGLE_TASK_TOOL_NAME]
+                    ]
+                ]
+            ])
+            ->throw()
+            ->json();
+
+        $parts = $response['candidates'][0]['content']['parts'] ?? [];
+        $toolUse = collect($parts)->first(fn ($part) => isset($part['functionCall']) && $part['functionCall']['name'] === self::SINGLE_TASK_TOOL_NAME);
+        $input = $toolUse['functionCall']['args'] ?? null;
+
+        if (! is_array($input) || empty($input['task_name'])) {
+            return [];
+        }
+
+        return $this->normalizeTasks([$input])[0] ?? [];
+    }
+
+    protected function buildSingleTaskPrompt(Event $event): string
+    {
+        $type = $event->event_type === 'Custom' ? $event->custom_event_type : $event->event_type;
+
+        $description = $event->description ?: 'None provided';
+
+        $existingTasks = $event->tasks()->pluck('task_name');
+        $existingList = $existingTasks->isEmpty()
+            ? 'None yet.'
+            : $existingTasks->map(fn ($name) => "- {$name}")->implode("\n");
+
+        return <<<PROMPT
+        You are an expert event planner. Suggest exactly ONE new task to add next to the checklist
+        for the event below — the single most valuable task that isn't already covered.
+
+        - Event name: {$event->event_name}
+        - Event type: {$type}
+        - Event date: {$this->formatEventDate($event)}
+        - Description: {$description}
+
+        Tasks already on the checklist (do not suggest a duplicate or near-duplicate of any of these):
+        {$existingList}
+
+        Give the task a realistic due date on or before the event date and a priority (Low, Medium, High)
+        reflecting how urgent it is.
+        PROMPT;
+    }
+
+    protected function formatEventDate(Event $event): string
+    {
+        return optional($event->event_date)->toDateString() ?? 'Not set';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function singleTaskTool(): array
+    {
+        return [
+            'name' => self::SINGLE_TASK_TOOL_NAME,
+            'description' => 'Records a single suggested event-planning task.',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'task_name' => ['type' => 'string'],
+                    'phase' => ['type' => 'string', 'enum' => self::ALLOWED_PHASES],
+                    'due_date' => ['type' => 'string', 'description' => 'YYYY-MM-DD'],
+                    'priority' => ['type' => 'string', 'enum' => self::ALLOWED_PRIORITIES],
+                    'notes' => ['type' => 'string'],
+                ],
+                'required' => ['task_name', 'phase', 'priority'],
+            ],
+        ];
     }
 
     protected function buildPrompt(Event $event): string

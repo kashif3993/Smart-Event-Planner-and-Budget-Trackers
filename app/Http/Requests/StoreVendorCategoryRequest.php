@@ -25,6 +25,7 @@ class StoreVendorCategoryRequest extends FormRequest
         return [
             'event_id' => ['required', 'exists:events,id'],
             'category_name' => ['required', 'string', 'max:150'],
+            'vendor_name' => ['nullable', 'string', 'max:150'],
             'suggested_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'allocated_amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],

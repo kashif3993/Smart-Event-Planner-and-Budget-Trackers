@@ -185,6 +185,211 @@
     transition: width 0.6s ease;
 }
 
+/* ── Budget & Spend Report ── */
+.report-section {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    padding: 22px;
+    margin-bottom: 24px;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.report-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.report-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.report-group {
+    padding-top: 18px;
+    margin-top: 18px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.report-group:first-of-type {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+}
+
+.report-currency-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+}
+
+.report-scope-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.report-subsection-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    margin: 20px 0 10px;
+}
+
+.report-alerts {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.report-alerts-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #991b1b;
+    margin-bottom: 6px;
+}
+
+.report-alerts-title i {
+    margin-right: 6px;
+}
+
+.report-alert-item {
+    font-size: 13px;
+    color: #7f1d1d;
+    padding: 3px 0;
+}
+
+.report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.report-kpi {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.report-kpi.is-negative {
+    background: #fef2f2;
+}
+
+.report-kpi-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.report-kpi-value {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.report-kpi.is-negative .report-kpi-value {
+    color: #b91c1c;
+}
+
+.report-kpi-caption {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.report-progress {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.report-projected-marker {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 12px;
+    background: #f59e0b;
+}
+
+.report-status-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-top: 6px;
+}
+
+.report-status-on-track  { background: #d1fae5; color: #065f46; }
+.report-status-watch     { background: #fef3c7; color: #92400e; }
+.report-status-at-risk   { background: #ffedd5; color: #9a3412; }
+.report-status-over      { background: #fee2e2; color: #991b1b; }
+.report-status-no-budget { background: #e5e7eb; color: #4b5563; }
+
+.report-detail-table {
+    margin-top: 4px;
+}
+
+.report-row-sublabel {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.report-negative-cell {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.report-empty-note {
+    font-size: 13px;
+    color: #6b7280;
+    padding: 8px 0 0;
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .report-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ── Expenses Table Card ── */
 .expenses-content {
     background: #fff;

@@ -274,10 +274,12 @@
 }
 
 .timeline-col-left {
+    order: 1;
     text-align: right;
 }
 
 .timeline-col-right {
+    order: 3;
     text-align: left;
 }
 
@@ -286,6 +288,7 @@
 }
 
 .timeline-node {
+    order: 2;
     flex: 0 0 48px;
     display: flex;
     align-items: center;

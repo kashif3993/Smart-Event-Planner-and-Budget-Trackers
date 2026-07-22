@@ -31,7 +31,9 @@
                     <p>Track and manage your event financial ecosystem in real-time.</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn-icon" title="Print" onclick="window.print()"><i class="fas fa-print"></i></button>
+                    <a href="{{ route('expenses.export.pdf', request()->query()) }}" class="btn btn-secondary">
+                        <i class="fas fa-file-pdf"></i> <span class="btn-text">Download PDF</span>
+                    </a>
                     <button class="btn btn-primary" onclick="openExpenseModal()">
                         <i class="fas fa-plus"></i> <span class="btn-text">Add Expense</span>
                     </button>
@@ -78,6 +80,210 @@
                     <div class="summary-icon"><i class="fas fa-university fa-5x"></i></div>
                 </div>
 
+            </div>
+
+            {{-- Budget & Spend Report --}}
+            @php
+                $periodLabels = ['all' => 'All Time (Till Date)', 'month' => 'This Month', 'week' => 'This Week'];
+                $spentLabel = $reportPeriod === 'all' ? 'Spent So Far' : 'Spent — '.$periodLabels[$reportPeriod];
+            @endphp
+            <div class="report-section">
+                <div class="report-header">
+                    <div>
+                        <h2 class="report-title">{{ $reportScope === 'all' ? 'Overall Report — All Events' : 'Single Event Report' }}</h2>
+                        <p class="report-subtitle">Budget, money already spent, and what's still expected to go out — combined or per event.</p>
+                    </div>
+                    <form method="GET" action="{{ route('expenses.index') }}" id="reportScopeForm" class="report-scope-form">
+                        @foreach(request()->except(['report_scope', 'report_period', 'page']) as $key => $value)
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endforeach
+                        <select name="report_scope" class="filter-select" onchange="document.getElementById('reportScopeForm').submit()">
+                            <option value="all" {{ $reportScope === 'all' ? 'selected' : '' }}>All Events Combined</option>
+                            @foreach($userEvents as $evt)
+                                <option value="{{ $evt->id }}" {{ (string) $reportScope === (string) $evt->id ? 'selected' : '' }}>
+                                    {{ $evt->event_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <select name="report_period" class="filter-select" onchange="document.getElementById('reportScopeForm').submit()">
+                            @foreach($periodLabels as $value => $label)
+                                <option value="{{ $value }}" {{ $reportPeriod === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
+
+                @forelse ($reportGroups as $group)
+                    <div class="report-group">
+                        @if(count($reportGroups) > 1)
+                            <div class="report-currency-tag">{{ $group->currency }}</div>
+                        @endif
+
+                        @if($group->alerts->isNotEmpty())
+                            <div class="report-alerts">
+                                <div class="report-alerts-title"><i class="fas fa-triangle-exclamation"></i> Over Budget Alerts</div>
+                                @foreach($group->alerts as $alert)
+                                    <div class="report-alert-item">
+                                        <strong>{{ $alert->label }}</strong>
+                                        {{ $alert->status === 'over' ? 'is over budget by' : 'is projected to go over budget by' }}
+                                        {{ $group->symbol }}{{ number_format($alert->overBy, 0) }}
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div class="report-kpi-grid">
+                            <div class="report-kpi">
+                                <span class="report-kpi-label">Total Budget</span>
+                                <span class="report-kpi-value">{{ $group->symbol }}{{ number_format($group->budget, 0) }}</span>
+                            </div>
+                            <div class="report-kpi">
+                                <span class="report-kpi-label">{{ $spentLabel }}</span>
+                                <span class="report-kpi-value">{{ $group->symbol }}{{ number_format($group->spent, 0) }}</span>
+                                <span class="report-kpi-caption">{{ number_format($group->utilization, 0) }}% of budget</span>
+                            </div>
+                            <div class="report-kpi">
+                                <span class="report-kpi-label">Expected / Remaining Expenses</span>
+                                <span class="report-kpi-value">{{ $group->symbol }}{{ number_format($group->expected, 0) }}</span>
+                                <span class="report-kpi-caption">Outstanding on logged items</span>
+                            </div>
+                            <div class="report-kpi {{ $group->remaining < 0 ? 'is-negative' : '' }}">
+                                <span class="report-kpi-label">{{ $group->remaining < 0 ? 'Projected Overrun' : 'Remaining Budget' }}</span>
+                                <span class="report-kpi-value">{{ $group->remaining < 0 ? '-' : '' }}{{ $group->symbol }}{{ number_format(abs($group->remaining), 0) }}</span>
+                                <span class="report-status-badge report-status-{{ $group->status }}">{{ ucwords(str_replace('-', ' ', $group->status)) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-bar-bg report-progress">
+                            <div class="progress-bar-fill" style="width: {{ min($group->utilization, 100) }}%;"></div>
+                            @if($group->projectedUtilization > $group->utilization)
+                                <div class="report-projected-marker" style="left: {{ min($group->projectedUtilization, 100) }}%;"
+                                     title="Projected once outstanding items are paid: {{ number_format($group->projectedUtilization, 0) }}%"></div>
+                            @endif
+                        </div>
+
+                        {{-- Overall scope: by-event breakdown --}}
+                        @if($group->rows->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="expenses-table report-detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ $group->detailLabel }}</th>
+                                            <th>Budget</th>
+                                            <th>Spent</th>
+                                            <th>Expected</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($group->rows as $row)
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ $row->label }}</strong>
+                                                    @if($row->sublabel)
+                                                        <div class="report-row-sublabel">{{ $row->sublabel }}</div>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $group->symbol }}{{ number_format($row->budget, 0) }}</td>
+                                                <td>{{ $group->symbol }}{{ number_format($row->spent, 0) }}</td>
+                                                <td>{{ $group->symbol }}{{ number_format($row->expected, 0) }}</td>
+                                                <td class="{{ $row->remaining < 0 ? 'report-negative-cell' : '' }}">
+                                                    {{ $row->remaining < 0 ? '-' : '' }}{{ $group->symbol }}{{ number_format(abs($row->remaining), 0) }}
+                                                </td>
+                                                <td>
+                                                    <span class="report-status-badge report-status-{{ $row->status }}">{{ ucwords(str_replace('-', ' ', $row->status)) }}</span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <p class="report-empty-note">No {{ strtolower($group->detailLabel) }} data logged yet for this scope.</p>
+                        @endif
+
+                        {{-- Overall scope only: breakdown by category, aggregated across every event --}}
+                        @if($reportScope === 'all' && $group->categoryRows->isNotEmpty())
+                            <h3 class="report-subsection-title">Expense Breakdown by Category</h3>
+                            <div class="table-responsive">
+                                <table class="expenses-table report-detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Budget</th>
+                                            <th>Spent</th>
+                                            <th>Expected</th>
+                                            <th>Remaining</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($group->categoryRows as $row)
+                                            <tr>
+                                                <td><strong>{{ $row->label }}</strong></td>
+                                                <td>{{ $group->symbol }}{{ number_format($row->budget, 0) }}</td>
+                                                <td>{{ $group->symbol }}{{ number_format($row->spent, 0) }}</td>
+                                                <td>{{ $group->symbol }}{{ number_format($row->expected, 0) }}</td>
+                                                <td class="{{ $row->remaining < 0 ? 'report-negative-cell' : '' }}">
+                                                    {{ $row->remaining < 0 ? '-' : '' }}{{ $group->symbol }}{{ number_format(abs($row->remaining), 0) }}
+                                                </td>
+                                                <td>
+                                                    <span class="report-status-badge report-status-{{ $row->status }}">{{ ucwords(str_replace('-', ' ', $row->status)) }}</span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+
+                        {{-- Single-event scope only: every expense, line by line --}}
+                        @if($reportScope !== 'all')
+                            <h3 class="report-subsection-title">Detailed Expense List</h3>
+                            @if($group->expenseItems->isNotEmpty())
+                                <div class="table-responsive">
+                                    <table class="expenses-table report-detail-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Category</th>
+                                                <th>Description</th>
+                                                <th>Vendor</th>
+                                                <th>Date</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($group->expenseItems as $item)
+                                                <tr>
+                                                    <td>{{ $item->category->category_name ?? '—' }}</td>
+                                                    <td>{{ $item->vendor_item_name }}</td>
+                                                    <td>{{ $item->category->vendor_name ?? '—' }}</td>
+                                                    <td>{{ $item->date_logged ? $item->date_logged->format('M d, Y') : '—' }}</td>
+                                                    <td>{{ $group->symbol }}{{ number_format($item->actual_cost, 0) }}</td>
+                                                    <td>
+                                                        <div class="status-indicator status-{{ strtolower(str_replace(' ', '-', $item->payment_status)) }}">
+                                                            <span class="status-dot"></span>
+                                                            {{ $item->payment_status }}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <p class="report-empty-note">No expenses logged for this event in the selected period.</p>
+                            @endif
+                        @endif
+                    </div>
+                @empty
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                        <p>No events to report on yet.</p>
+                    </div>
+                @endforelse
             </div>
 
             {{-- Filters + Table --}}
@@ -351,8 +557,8 @@
     </main>
 
     {{-- Add / Edit Expense Modal --}}
-    <div id="expenseModal" class="modal" onclick="handleModalClick(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle"><i class="fas fa-plus-circle" style="color:#4f46e5;margin-right:8px;"></i>Add New Expense</h2>
                 <button class="action-btn close-btn" onclick="closeExpenseModal()">

@@ -1,3 +1,13 @@
+.share-dropdown .dropdown-menu {
+    width: 200px;
+}
+
+.share-dropdown .dropdown-item i {
+    width: 16px;
+    margin-right: 4px;
+    color: var(--text-muted);
+}
+
 /* ===== Shared buttons, chips, alerts (events + tasks pages) ===== */
 .btn {
     display: inline-flex;
@@ -394,6 +404,22 @@
     margin-bottom: 20px;
 }
 
+.ai-suggest-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.ai-suggest-status {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.ai-suggest-status.is-loading { color: var(--primary); }
+.ai-suggest-status.is-success { color: #065f46; }
+.ai-suggest-status.is-error   { color: #b91c1c; }
+
 .form-group--full {
     grid-column: 1 / -1;
 }
@@ -474,15 +500,67 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-    display: block;
+    display: flex;
+    flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .event-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+.event-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.event-card-actions {
+    display: flex;
+    border-top: 1px solid var(--border);
+}
+
+.card-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border);
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.card-action-btn:first-child {
+    border-left: none;
+}
+
+.card-action-btn:hover {
+    background-color: var(--bg-light, #f8fafc);
+    color: var(--primary);
+}
+
+.card-action-btn--danger:hover {
+    background-color: #fef2f2;
+    color: var(--danger);
+}
+
+.event-card-delete-form {
+    flex: 1;
+    margin: 0;
+    display: flex;
+}
+
+.event-card-delete-form .card-action-btn {
+    width: 100%;
 }
 
 .event-card-media {

@@ -126,6 +126,7 @@
                                         data-open-modal="categoryModalEdit"
                                         data-id="{{ $category->id }}"
                                         data-name="{{ $category->category_name }}"
+                                        data-vendor="{{ $category->vendor_name }}"
                                         data-suggested="{{ rtrim(rtrim($category->suggested_percentage, '0'), '.') }}"
                                         data-allocated="{{ rtrim(rtrim($category->allocated_amount, '0'), '.') }}"
                                         data-notes="{{ $category->notes }}"
@@ -146,6 +147,9 @@
                                 </div>
                                 <div class="category-heading">
                                     <h3 class="category-name">{{ $category->category_name }}</h3>
+                                    @if ($category->vendor_name)
+                                        <p class="category-vendor-name"><i class="fas fa-store"></i> {{ $category->vendor_name }}</p>
+                                    @endif
                                     <span class="allocation-badge">{{ $category->suggested_display }}%</span>
                                     <span class="allocation-caption">Allocation</span>
                                 </div>
@@ -230,6 +234,11 @@
                             <input type="text" id="add_category_name" name="category_name" placeholder="e.g. Catering" maxlength="150" required>
                         </div>
 
+                        <div class="form-group form-group--full">
+                            <label for="add_vendor_name">Company / Shop Name</label>
+                            <input type="text" id="add_vendor_name" name="vendor_name" placeholder="e.g. Spinzar Caterers" maxlength="150">
+                        </div>
+
                         <div class="form-group">
                             <label for="add_suggested_percentage">Suggested % of Budget</label>
                             <input type="number" id="add_suggested_percentage" name="suggested_percentage" min="0" max="100" step="0.01" placeholder="e.g. 35">
@@ -282,6 +291,11 @@
                         <div class="form-group form-group--full">
                             <label for="edit_category_name">Category Name</label>
                             <input type="text" id="edit_category_name" name="category_name" maxlength="150" required>
+                        </div>
+
+                        <div class="form-group form-group--full">
+                            <label for="edit_vendor_name">Company / Shop Name</label>
+                            <input type="text" id="edit_vendor_name" name="vendor_name" maxlength="150">
                         </div>
 
                         <div class="form-group">

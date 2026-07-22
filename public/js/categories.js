@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
             editForm.action = actionTemplate.replace('__CATEGORY__', currentEditId);
 
             editForm.querySelector('#edit_category_name').value = button.dataset.name || '';
+            editForm.querySelector('#edit_vendor_name').value = button.dataset.vendor || '';
             editForm.querySelector('#edit_suggested_percentage').value = button.dataset.suggested || '';
             editForm.querySelector('#edit_allocated_amount').value = button.dataset.allocated || '';
             editForm.querySelector('#edit_ai_slash_priority').value = button.dataset.priority || '';

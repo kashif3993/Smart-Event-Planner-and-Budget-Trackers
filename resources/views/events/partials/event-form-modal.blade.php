@@ -38,7 +38,7 @@
 
                 <div class="form-group">
                     <label for="event_date">Event Date</label>
-                    <input type="date" id="event_date" name="event_date" value="{{ old('event_date', $isEdit ? optional($event->event_date)->toDateString() : '') }}" required>
+                    <input type="date" id="event_date" name="event_date" value="{{ old('event_date', $isEdit ? optional($event->event_date)->toDateString() : now()->addDays(2)->toDateString()) }}" required>
                 </div>
 
                 <div class="form-group">

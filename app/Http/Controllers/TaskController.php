@@ -93,6 +93,33 @@ class TaskController extends Controller
         ]);
     }
 
+    public function suggestAi(Event $event, AiTaskGeneratorService $service): JsonResponse
+    {
+        $this->authorizeEvent($event);
+
+        set_time_limit(60);
+
+        try {
+            $task = $service->suggestTask($event);
+        } catch (AiTaskGeneratorNotConfiguredException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            report($e);
+            $response = $e->response->json();
+            $apiMessage = $response['error']['message'] ?? 'AI task suggestion failed (API Error).';
+            return response()->json(['success' => false, 'message' => 'Google API Error: ' . $apiMessage], 502);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['success' => false, 'message' => 'AI task suggestion failed. Please try again later.'], 502);
+        }
+
+        if (empty($task)) {
+            return response()->json(['success' => false, 'message' => 'The AI could not suggest a task.'], 422);
+        }
+
+        return response()->json(['success' => true, 'task' => $task]);
+    }
+
     protected function authorizeEvent(Event $event): void
     {
         abort_unless($event->user_id === Auth::id(), 403);
