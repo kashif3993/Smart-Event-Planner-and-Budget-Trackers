@@ -9,44 +9,47 @@
                 </div>
             </div>
             <div class="topbar-right">
+                @php
+                    $notifications = Auth::check() ? \App\Models\Activity::forUser(Auth::id())->recent(5)->get() : collect();
+                @endphp
                 <div class="dropdown notification-dropdown">
                     <button type="button" class="icon-btn" id="notifBtn" aria-expanded="false" aria-haspopup="true">
                         <i class="fa fa-bell"></i>
-                        <span class="notif-badge">3</span>
+                        @if($notifications->count() > 0)
+                            <span class="notif-badge">{{ $notifications->count() }}</span>
+                        @endif
                     </button>
                     <div class="dropdown-menu notif-menu" id="notifMenu">
                         <div class="dropdown-header">Notifications</div>
                         <ul class="notif-list">
-                            <li class="notif-item">
-                                <span class="notif-dot"></span>
-                                <div>
-                                    <div class="notif-text">Tech Summit 2026 starts in 3 days</div>
-                                    <div class="notif-time">2 hours ago</div>
-                                </div>
-                            </li>
-                            <li class="notif-item">
-                                <span class="notif-dot"></span>
-                                <div>
-                                    <div class="notif-text">Budget for Gala Dinner reached 80%</div>
-                                    <div class="notif-time">Yesterday</div>
-                                </div>
-                            </li>
-                            <li class="notif-item">
-                                <span class="notif-dot"></span>
-                                <div>
-                                    <div class="notif-text">New vendor proposal received</div>
-                                    <div class="notif-time">2 days ago</div>
-                                </div>
-                            </li>
+                            @forelse($notifications as $notification)
+                                <li class="notif-item">
+                                    <span class="notif-dot" style="background-color: {{ $notification->color ?? '#3498db' }};"></span>
+                                    <div>
+                                        <div class="notif-text">{{ $notification->description }}</div>
+                                        <div class="notif-time">{{ $notification->created_at->diffForHumans() }}</div>
+                                    </div>
+                                </li>
+                            @empty
+                                <li class="notif-item" style="padding: 10px; text-align: center; justify-content: center;">
+                                    <div class="notif-text" style="color: #6c757d;">No new notifications</div>
+                                </li>
+                            @endforelse
                         </ul>
+                        <div class="dropdown-divider" style="margin:0; border-top: 1px solid #e0e0e0;"></div>
+                        <a href="{{ route('activity.index') }}" class="dropdown-item" style="text-align: center; font-size: 0.9rem;">View All Activity</a>
                     </div>
                 </div>
 
                 <div class="dropdown profile-dropdown">
                     <div class="user-profile" id="profileBtn" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
-                        <div class="avatar">
-                            {{ substr(Auth::user()->full_name ?? 'U', 0, 1) }}
-                        </div>
+                        @if(Auth::user()?->profile_image)
+                            <img src="{{ asset('storage/'.Auth::user()->profile_image) }}" alt="" class="avatar avatar-img">
+                        @else
+                            <div class="avatar">
+                                {{ substr(Auth::user()->full_name ?? 'U', 0, 1) }}
+                            </div>
+                        @endif
                         <span class="dropdown-caret">▼</span>
                     </div>
                     <div class="dropdown-menu profile-menu" id="profileMenu">
@@ -54,8 +57,8 @@
                             <strong>{{ Auth::user()->full_name ?? 'User' }}</strong>
                             <div class="dropdown-subtext">{{ Auth::user()->email ?? '' }}</div>
                         </div>
-                        <a href="#" class="dropdown-item">My Profile</a>
-                        <a href="#" class="dropdown-item">Settings</a>
+                        <a href="{{ route('settings.index') }}" class="dropdown-item">My Profile</a>
+                        <a href="{{ route('settings.index') }}" class="dropdown-item">Settings</a>
                         <div class="dropdown-divider"></div>
                         <form action="{{ route('logout') }}" method="POST" style="margin:0;">
                             @csrf

@@ -11,6 +11,7 @@ class VendorCategory extends Model
     protected $fillable = [
         'event_id',
         'category_name',
+        'vendor_name',
         'suggested_percentage',
         'allocated_amount',
         'notes',

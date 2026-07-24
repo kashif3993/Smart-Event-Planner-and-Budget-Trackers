@@ -96,7 +96,7 @@
                         <h2 class="card-title">Global Progress</h2>
                     </div>
                     
-                    <div class="donut-chart">
+                    <div class="donut-chart" style="--pct: {{ $globalProgress ?? 0 }};">
                         <div class="donut-inner">
                             <div class="donut-value">{{ $globalProgress ?? 0 }}%</div>
                             <div class="donut-label">COMPLETED</div>

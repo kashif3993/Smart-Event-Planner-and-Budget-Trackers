@@ -29,6 +29,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ route('organization.index') }}" class="nav-link {{ request()->routeIs('organization.*') ? 'active' : '' }}">
+                    <span class="nav-icon">🏢</span> Organization
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ route('expenses.index') }}" class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
                     <span class="nav-icon">🧾</span> Expenses
                 </a>
@@ -49,7 +54,7 @@
             <a href="{{ route('events.index') }}?new=1" class="btn-new-event" style="text-decoration:none;">+ New Event</a>
             <ul class="nav-menu" style="padding: 0;">
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                         <span class="nav-icon">⚙️</span> Settings
                     </a>
                 </li>

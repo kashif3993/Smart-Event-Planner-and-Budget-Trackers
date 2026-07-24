@@ -42,9 +42,19 @@
                     <p class="page-subtitle">{{ $event->description ?: 'No description added yet.' }}</p>
                 </div>
                 <div class="page-header-actions">
-                    <button type="button" class="btn btn-outline" id="shareEventBtn">
-                        <i class="fas fa-share-alt"></i> Share
-                    </button>
+                    <div class="dropdown share-dropdown">
+                        <button type="button" class="btn btn-outline" aria-expanded="false" aria-haspopup="true">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{{ route('events.export.pdf', $event) }}" class="dropdown-item">
+                                <i class="fas fa-file-pdf"></i> Download PDF
+                            </a>
+                            <a href="{{ route('events.export.excel', $event) }}" class="dropdown-item">
+                                <i class="fas fa-file-excel"></i> Download Excel
+                            </a>
+                        </div>
+                    </div>
                     <button type="button" class="btn btn-primary" data-open-modal="eventModal">
                         <i class="fas fa-pen"></i> Edit Details
                     </button>

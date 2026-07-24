@@ -158,6 +158,7 @@ class BudgetController extends Controller
     {
         return $event->vendorCategories()
             ->withSum('expenses as spent_amount', 'actual_cost')
+            ->withCount(['expenses as paid_expense_count' => fn ($q) => $q->where('payment_status', 'Paid')])
             ->orderByDesc('allocated_amount')
             ->get()
             ->map(function (VendorCategory $category) {
@@ -169,6 +170,7 @@ class BudgetController extends Controller
                 $category->utilization = $allocated > 0 ? round(($spent / $allocated) * 100, 1) : 0;
                 $category->is_over_budget = $spent > $allocated;
                 $category->is_almost_depleted = ! $category->is_over_budget && $category->utilization >= 90;
+                $category->has_paid_expense = $category->paid_expense_count > 0;
 
                 return $category;
             });

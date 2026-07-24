@@ -70,6 +70,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // ----- Suggest with AI (Add/Edit Task modals) -----
+    // Fetches one AI-suggested task and fills the currently open form's fields
+    // so the user can review/tweak it before actually saving (Add/Save Changes).
+    document.querySelectorAll('.ai-suggest-task-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const url = button.getAttribute('data-url');
+            const prefix = button.getAttribute('data-target-prefix');
+            const status = button.closest('.ai-suggest-row')?.querySelector('.ai-suggest-status');
+            const form = button.closest('form');
+            if (!url || !form) return;
+
+            button.disabled = true;
+            if (status) {
+                status.textContent = 'Asking the AI for a task…';
+                status.className = 'ai-suggest-status is-loading';
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+            })
+                .then(function(response) { return response.json().then(function(data) { return { ok: response.ok, data: data }; }); })
+                .then(function(result) {
+                    if (!result.ok || !result.data.success) {
+                        if (status) {
+                            status.textContent = (result.data && result.data.message) || 'AI suggestion failed.';
+                            status.className = 'ai-suggest-status is-error';
+                        }
+                        return;
+                    }
+
+                    const task = result.data.task;
+                    const nameField = form.querySelector('#' + prefix + 'task_name');
+                    const phaseField = form.querySelector('#' + prefix + 'phase');
+                    const priorityField = form.querySelector('#' + prefix + 'priority');
+                    const dueDateField = form.querySelector('#' + prefix + 'due_date');
+                    const notesField = form.querySelector('#' + prefix + 'notes');
+
+                    if (nameField) nameField.value = task.task_name || '';
+                    if (phaseField) phaseField.value = task.phase || 'Pre-Planning';
+                    if (priorityField) priorityField.value = task.priority || 'Medium';
+                    if (dueDateField) dueDateField.value = task.due_date || '';
+                    if (notesField) notesField.value = task.notes || '';
+
+                    if (status) {
+                        status.textContent = 'Suggestion added below — review and save.';
+                        status.className = 'ai-suggest-status is-success';
+                    }
+                })
+                .catch(function() {
+                    if (status) {
+                        status.textContent = 'AI suggestion failed. Please try again.';
+                        status.className = 'ai-suggest-status is-error';
+                    }
+                })
+                .finally(function() {
+                    button.disabled = false;
+                });
+        });
+    });
+
     // ----- Generate with AI -----
     const generateBtn = document.getElementById('generateAiBtn');
     const statusBox = document.getElementById('aiGenerateStatus');

@@ -91,18 +91,35 @@
                             </a>
 
                             <div class="event-card-actions">
-                                <a href="{{ route('events.show', $event) }}" class="event-icon-btn" title="View">
-                                    <i class="fas fa-eye"></i>
+                                <a href="{{ route('events.show', $event) }}" class="card-action-btn" title="View {{ $event->event_name }}">
+                                    <i class="fas fa-eye"></i> View
                                 </a>
-                                <a href="{{ route('events.show', $event) }}?edit=1" class="event-icon-btn" title="Edit">
-                                    <i class="fas fa-pen"></i>
-                                </a>
+                                <button type="button" class="card-action-btn event-edit-btn" title="Edit {{ $event->event_name }}"
+                                    data-open-modal="eventModalEdit"
+                                    data-event-id="{{ $event->id }}"
+                                    data-event-name="{{ $event->event_name }}"
+                                    data-event-type="{{ $event->event_type }}"
+                                    data-event-custom-type="{{ $event->custom_event_type }}"
+                                    data-event-date="{{ optional($event->event_date)->toDateString() }}"
+                                    data-event-time="{{ $event->event_time }}"
+                                    data-event-guest-count="{{ $event->guest_count }}"
+                                    data-event-max-guests="{{ $event->max_guests }}"
+                                    data-event-venue-name="{{ $event->venue_name }}"
+                                    data-event-location="{{ $event->location }}"
+                                    data-event-venue-image="{{ $event->venue_image ? asset('storage/'.$event->venue_image) : '' }}"
+                                    data-event-total-budget="{{ $event->total_budget }}"
+                                    data-event-budget-spent="{{ $event->budget_spent }}"
+                                    data-event-currency="{{ $event->currency }}"
+                                    data-event-status="{{ $event->status }}"
+                                    data-event-description="{{ $event->description }}">
+                                    <i class="fas fa-pen"></i> Edit
+                                </button>
                                 <form action="{{ route('events.destroy', $event) }}" method="POST" class="event-card-delete-form"
                                       onsubmit="return confirm('Delete this event and all of its tasks? This cannot be undone.')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="event-icon-btn event-icon-btn--danger" title="Delete">
-                                        <i class="fas fa-trash"></i>
+                                    <button type="submit" class="card-action-btn card-action-btn--danger" title="Delete {{ $event->event_name }}">
+                                        <i class="fas fa-trash"></i> Delete
                                     </button>
                                 </form>
                             </div>
@@ -115,6 +132,7 @@
     </main>
 
     @include('events.partials.event-form-modal', ['event' => null])
+    @include('events.partials.event-edit-modal')
 
 </body>
 </html>

@@ -140,7 +140,17 @@
     font-size: 16px;
     font-weight: 700;
     color: var(--text-dark);
+    margin: 0 0 2px;
+}
+
+.category-vendor-name {
+    font-size: 12px;
+    color: var(--text-muted);
     margin: 0 0 6px;
+}
+
+.category-vendor-name i {
+    margin-right: 4px;
 }
 
 .allocation-badge {

@@ -9,6 +9,13 @@
         <form action="{{ route('events.tasks.store', $event) }}" method="POST" class="modal-body">
             @csrf
 
+            <div class="ai-suggest-row">
+                <button type="button" class="btn btn-outline ai-suggest-task-btn" data-url="{{ route('events.tasks.suggestAi', $event) }}" data-target-prefix="add_">
+                    <i class="fas fa-wand-magic-sparkles"></i> Suggest with AI
+                </button>
+                <span class="ai-suggest-status"></span>
+            </div>
+
             <div class="form-grid">
                 <div class="form-group form-group--full">
                     <label for="add_task_name">Task Name</label>
@@ -73,6 +80,13 @@
         <form id="taskEditForm" action="{{ route('events.tasks.update', [$event, '__TASK__']) }}" method="POST" class="modal-body">
             @csrf
             @method('PUT')
+
+            <div class="ai-suggest-row">
+                <button type="button" class="btn btn-outline ai-suggest-task-btn" data-url="{{ route('events.tasks.suggestAi', $event) }}" data-target-prefix="edit_">
+                    <i class="fas fa-wand-magic-sparkles"></i> Suggest with AI
+                </button>
+                <span class="ai-suggest-status"></span>
+            </div>
 
             <div class="form-grid">
                 <div class="form-group form-group--full">

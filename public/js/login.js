@@ -7,7 +7,7 @@
     }
 
     /* ── Submit spinner ── */
-    document.getElementById('loginForm').addEventListener('submit', function () {
+    document.getElementById('loginForm')?.addEventListener('submit', function () {
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         document.getElementById('btnText').textContent = 'Signing in…';

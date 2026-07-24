@@ -5,10 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\Event;
 use App\Models\VendorCategory;
+use App\Services\BudgetReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ExpenseController extends Controller
 {
+    public function __construct(protected BudgetReportService $reportService)
+    {
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -16,27 +23,9 @@ class ExpenseController extends Controller
         // All event IDs belonging to this user
         $userEventIds = $user->events()->pluck('id');
 
-        // Start query — expenses scoped to user's events
-        $query = Expense::whereIn('event_id', $userEventIds)->with(['event', 'category']);
-
-        // Filters
-        if ($request->filled('category')) {
-            $query->whereHas('category', fn($q) => $q->where('category_name', $request->category));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('payment_status', $request->status);
-        }
-
-        if ($request->filled('date')) {
-            $query->whereDate('date_logged', $request->date);
-        }
-
-        if ($request->filled('event')) {
-            $query->where('event_id', $request->event);
-        }
-
-        $expenses = $query->orderBy('date_logged', 'desc')->paginate(10);
+        $expenses = $this->filteredExpensesQuery($request, $userEventIds)
+            ->orderBy('date_logged', 'desc')
+            ->paginate(10);
 
         // Summary totals
         $allExpenses = Expense::whereIn('event_id', $userEventIds);
@@ -103,6 +92,17 @@ class ExpenseController extends Controller
             ? round((($thisMonthSpend - $lastMonthSpend) / $lastMonthSpend) * 100, 1)
             : ($thisMonthSpend > 0 ? 100 : 0);
 
+        // Budget & Spend Report — "all events combined" or a single selected event,
+        // and how far back "Spent" looks (all time / this month / this week).
+        $reportScope = $request->filled('report_scope') && $request->report_scope !== 'all'
+            ? (int) $request->report_scope
+            : 'all';
+        $reportPeriod = in_array($request->input('report_period'), ['week', 'month'], true)
+            ? $request->input('report_period')
+            : 'all';
+
+        $reportGroups = $this->reportService->build($userEvents, $reportScope, $reportPeriod);
+
         return view('expenses.index', compact(
             'expenses',
             'totalExpenses',
@@ -117,8 +117,80 @@ class ExpenseController extends Controller
             'totalBudget',
             'userEvents',
             'vendorCategories',
-            'vsLastMonth'
+            'vsLastMonth',
+            'reportScope',
+            'reportPeriod',
+            'reportGroups'
         ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $user = auth()->user();
+        $userEventIds = $user->events()->pluck('id');
+        $userEvents = $user->events()->orderBy('event_name')->get();
+
+        $expenses = $this->filteredExpensesQuery($request, $userEventIds)
+            ->orderBy('date_logged', 'desc')
+            ->get();
+
+        $reportScope = $request->filled('report_scope') && $request->report_scope !== 'all'
+            ? (int) $request->report_scope
+            : 'all';
+        $reportPeriod = in_array($request->input('report_period'), ['week', 'month'], true)
+            ? $request->input('report_period')
+            : 'all';
+
+        $reportGroups = $this->reportService->build($userEvents, $reportScope, $reportPeriod);
+
+        $scopeEvent = $reportScope !== 'all' ? $userEvents->firstWhere('id', $reportScope) : null;
+
+        $appliedFilters = array_filter([
+            'Event' => $request->filled('event') ? optional($userEvents->firstWhere('id', $request->event))->event_name : null,
+            'Category' => $request->filled('category') ? $request->category : null,
+            'Status' => $request->filled('status') ? $request->status : null,
+            'Date Logged' => $request->filled('date') ? $request->date : null,
+        ]);
+
+        $pdf = Pdf::loadView('expenses.exports.pdf', [
+            'expenses' => $expenses,
+            'reportGroups' => $reportGroups,
+            'scopeEvent' => $scopeEvent,
+            'appliedFilters' => $appliedFilters,
+            'reportPeriod' => $reportPeriod,
+        ])->setPaper('a4');
+
+        $fileName = 'expense-report-'.($scopeEvent ? Str::slug($scopeEvent->event_name).'-' : 'all-events-').now()->format('Y-m-d').'.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Expenses scoped to the user's events, with the Expenses page's
+     * event/category/status/date filters applied. Shared by the paginated
+     * index() list and the unpaginated PDF export so both always agree.
+     */
+    protected function filteredExpensesQuery(Request $request, $userEventIds)
+    {
+        $query = Expense::whereIn('event_id', $userEventIds)->with(['event', 'category']);
+
+        if ($request->filled('category')) {
+            $query->whereHas('category', fn ($q) => $q->where('category_name', $request->category));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('payment_status', $request->status);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('date_logged', $request->date);
+        }
+
+        if ($request->filled('event')) {
+            $query->where('event_id', $request->event);
+        }
+
+        return $query;
     }
 
     public function store(Request $request)
@@ -179,7 +251,7 @@ class ExpenseController extends Controller
         abort_unless($event->user_id === auth()->id(), 403);
 
         return response()->json(
-            $event->vendorCategories()->select('id', 'category_name')->get()
+            $event->vendorCategories()->select('id', 'category_name', 'vendor_name')->get()
         );
     }
 }
