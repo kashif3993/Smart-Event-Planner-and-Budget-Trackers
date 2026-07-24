@@ -43,9 +43,13 @@
 
                 <div class="dropdown profile-dropdown">
                     <div class="user-profile" id="profileBtn" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
-                        <div class="avatar">
-                            {{ substr(Auth::user()->full_name ?? 'U', 0, 1) }}
-                        </div>
+                        @if(Auth::user()?->profile_image)
+                            <img src="{{ asset('storage/'.Auth::user()->profile_image) }}" alt="" class="avatar avatar-img">
+                        @else
+                            <div class="avatar">
+                                {{ substr(Auth::user()->full_name ?? 'U', 0, 1) }}
+                            </div>
+                        @endif
                         <span class="dropdown-caret">▼</span>
                     </div>
                     <div class="dropdown-menu profile-menu" id="profileMenu">
@@ -53,8 +57,8 @@
                             <strong>{{ Auth::user()->full_name ?? 'User' }}</strong>
                             <div class="dropdown-subtext">{{ Auth::user()->email ?? '' }}</div>
                         </div>
-                        <a href="#" class="dropdown-item">My Profile</a>
-                        <a href="#" class="dropdown-item">Settings</a>
+                        <a href="{{ route('settings.index') }}" class="dropdown-item">My Profile</a>
+                        <a href="{{ route('settings.index') }}" class="dropdown-item">Settings</a>
                         <div class="dropdown-divider"></div>
                         <form action="{{ route('logout') }}" method="POST" style="margin:0;">
                             @csrf

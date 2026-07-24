@@ -60,6 +60,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/budget', [\App\Http\Controllers\BudgetController::class, 'index'])->name('budget.index');
     Route::get('/budget/export', [\App\Http\Controllers\BudgetController::class, 'export'])->name('budget.export');
 
+    Route::get('/organization', [\App\Http\Controllers\OrganizationDashboardController::class, 'index'])->name('organization.index');
+
     Route::post('/events/{event}/rebalance-ai-priorities', [\App\Http\Controllers\BudgetRebalanceController::class, 'aiPriorities'])->name('budget.rebalanceAiPriorities');
     Route::post('/events/{event}/rebalance-commit', [\App\Http\Controllers\BudgetRebalanceController::class, 'commit'])->name('budget.rebalanceCommit');
 
@@ -69,4 +71,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/activity', [\App\Http\Controllers\ActivityController::class, 'index'])->name('activity.index');
     Route::delete('/activity/clear-all', [\App\Http\Controllers\ActivityController::class, 'clearAll'])->name('activity.clearAll');
     Route::delete('/activity/{activity}', [\App\Http\Controllers\ActivityController::class, 'destroy'])->name('activity.destroy');
+
+    Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [\App\Http\Controllers\SettingsController::class, 'updateProfile'])->name('settings.updateProfile');
+    Route::put('/settings/password', [\App\Http\Controllers\SettingsController::class, 'updatePassword'])->name('settings.updatePassword');
+    Route::delete('/settings/account', [\App\Http\Controllers\SettingsController::class, 'destroyAccount'])->name('settings.destroyAccount');
+
+    Route::post('/settings/backup', [\App\Http\Controllers\SettingsController::class, 'createBackup'])->name('settings.backup.create');
+    Route::get('/settings/backup/{filename}/download', [\App\Http\Controllers\SettingsController::class, 'downloadBackup'])->name('settings.backup.download');
+    Route::delete('/settings/backup/{filename}', [\App\Http\Controllers\SettingsController::class, 'destroyBackup'])->name('settings.backup.destroy');
 });
