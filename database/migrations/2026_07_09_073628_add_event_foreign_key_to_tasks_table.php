@@ -37,6 +37,14 @@ return new class extends Migration
 
     protected function foreignKeyExists(): bool
     {
+        // information_schema.TABLE_CONSTRAINTS is MySQL-specific — this guard only
+        // matters for the MySQL environment it was written for (where the FK may
+        // already exist outside migrations). Other drivers (e.g. sqlite in tests)
+        // never have it pre-exist, so it's safe to say so and let the migration proceed.
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return false;
+        }
+
         return DB::table('information_schema.TABLE_CONSTRAINTS')
             ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
             ->where('TABLE_NAME', 'tasks')

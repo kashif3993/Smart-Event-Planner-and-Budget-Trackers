@@ -62,6 +62,32 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/organization', [\App\Http\Controllers\OrganizationDashboardController::class, 'index'])->name('organization.index');
 
+    Route::get('/event-groups', [\App\Http\Controllers\EventGroupController::class, 'index'])->name('event-groups.index');
+    Route::get('/event-groups/create', [\App\Http\Controllers\EventGroupController::class, 'create'])->name('event-groups.create');
+    Route::post('/event-groups', [\App\Http\Controllers\EventGroupController::class, 'store'])->name('event-groups.store');
+    Route::get('/event-groups/{group}', [\App\Http\Controllers\EventGroupController::class, 'show'])->name('event-groups.show');
+    Route::get('/event-groups/{group}/edit', [\App\Http\Controllers\EventGroupController::class, 'edit'])->name('event-groups.edit');
+    Route::put('/event-groups/{group}', [\App\Http\Controllers\EventGroupController::class, 'update'])->name('event-groups.update');
+    Route::delete('/event-groups/{group}', [\App\Http\Controllers\EventGroupController::class, 'destroy'])->name('event-groups.destroy');
+    Route::patch('/event-groups/{group}/archive', [\App\Http\Controllers\EventGroupController::class, 'archive'])->name('event-groups.archive');
+    Route::get('/event-groups/{group}/timeline', [\App\Http\Controllers\EventGroupController::class, 'timeline'])->name('event-groups.timeline');
+
+    Route::post('/event-groups/{group}/events', [\App\Http\Controllers\EventGroupMembershipController::class, 'attach'])->name('event-groups.events.attach');
+    Route::delete('/event-groups/{group}/events/{event}', [\App\Http\Controllers\EventGroupMembershipController::class, 'detach'])->name('event-groups.events.detach');
+
+    Route::get('/event-groups/{group}/guests', [\App\Http\Controllers\GroupGuestController::class, 'index'])->name('event-groups.guests');
+    Route::post('/event-groups/{group}/guests', [\App\Http\Controllers\GroupGuestController::class, 'store'])->name('event-groups.guests.store');
+    Route::post('/event-groups/{group}/guests/merge', [\App\Http\Controllers\GroupGuestController::class, 'merge'])->name('event-groups.guests.merge');
+    Route::post('/event-groups/{group}/guests/dismiss-duplicate', [\App\Http\Controllers\GroupGuestController::class, 'dismissDuplicate'])->name('event-groups.guests.dismissDuplicate');
+    Route::get('/event-groups/{group}/vendors', [\App\Http\Controllers\GroupGuestController::class, 'vendors'])->name('event-groups.vendors');
+
+    Route::put('/event-groups/{group}/budget-mode', [\App\Http\Controllers\GroupBudgetModeController::class, 'update'])->name('event-groups.budgetMode.update');
+
+    Route::get('/event-groups/{group}/contention/snapshot', [\App\Http\Controllers\ContentionSandboxController::class, 'snapshot'])->name('event-groups.contention.snapshot');
+    Route::post('/event-groups/{group}/contention/negotiate', [\App\Http\Controllers\ContentionNegotiationController::class, 'negotiate'])->name('event-groups.contention.negotiate');
+    Route::post('/event-groups/{group}/contention/commit', [\App\Http\Controllers\ContentionResolutionController::class, 'commit'])->name('event-groups.contention.commit');
+    Route::get('/event-groups/{group}/resolutions', [\App\Http\Controllers\ContentionResolutionController::class, 'index'])->name('event-groups.resolutions.index');
+
     Route::post('/events/{event}/rebalance-ai-priorities', [\App\Http\Controllers\BudgetRebalanceController::class, 'aiPriorities'])->name('budget.rebalanceAiPriorities');
     Route::post('/events/{event}/rebalance-commit', [\App\Http\Controllers\BudgetRebalanceController::class, 'commit'])->name('budget.rebalanceCommit');
 

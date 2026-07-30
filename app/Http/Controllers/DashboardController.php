@@ -2,14 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EventGroup;
+use App\Services\ContentionDetectionService;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(ContentionDetectionService $contention): View
     {
         $user = auth()->user();
-        
+
+        // CR-13/CR-14 — contention is evaluated per pooled group; every group
+        // currently in contention gets its own critical banner here.
+        $contendedGroups = EventGroup::where('user_id', $user->id)
+            ->where('budget_mode', 'Pooled')
+            ->where('status', 'Active')
+            ->with('events')
+            ->get()
+            ->filter(fn (EventGroup $group) => $contention->isContended($group))
+            ->map(fn (EventGroup $group) => [
+                'group' => $group,
+                'contentionData' => $contention->snapshot($group),
+            ]);
+
         $totalEvents = \App\Models\Event::where('user_id', $user->id)->count();
         $upcomingEventsCount = \App\Models\Event::where('user_id', $user->id)->where('event_date', '>=', now())->count();
         
@@ -69,6 +84,7 @@ class DashboardController extends Controller
         }, $monthlySpendData);
 
         return view('dashboard', compact(
+            'contendedGroups',
             'totalEvents',
             'upcomingEventsCount',
             'budgetPercentage',

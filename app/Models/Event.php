@@ -2,14 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
+        'event_group_id',
         'event_name',
         'event_type',
         'custom_event_type',
@@ -40,6 +45,16 @@ class Event extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function eventGroup(): BelongsTo
+    {
+        return $this->belongsTo(EventGroup::class);
+    }
+
+    public function guests(): BelongsToMany
+    {
+        return $this->belongsToMany(Guest::class, 'event_guest')->withTimestamps();
     }
 
     public function tasks(): HasMany

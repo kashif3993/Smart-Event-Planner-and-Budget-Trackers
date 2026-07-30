@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/event-groups.css') }}?v={{ time() }}">
     <script src="{{ asset('js/dashboard.js') }}" defer></script>
 </head>
 <body>
@@ -27,6 +28,10 @@
                 <h1 class="page-title">Welcome back, {{ explode(' ', Auth::user()->full_name ?? 'User')[0] }}</h1>
                 <p class="page-subtitle">Your planning ecosystem is looking optimized for the week ahead.</p>
             </div>
+
+            @foreach (($contendedGroups ?? []) as $item)
+                @include('event-groups.partials.contention-banner', ['group' => $item['group'], 'contentionData' => $item['contentionData']])
+            @endforeach
 
             <!-- Stats Grid -->
             <div class="stats-grid">

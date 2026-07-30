@@ -29,6 +29,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ route('event-groups.index') }}" class="nav-link {{ request()->routeIs('event-groups.*') ? 'active' : '' }}">
+                    <span class="nav-icon">🗂️</span> Groups
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{{ route('organization.index') }}" class="nav-link {{ request()->routeIs('organization.*') ? 'active' : '' }}">
                     <span class="nav-icon">🏢</span> Organization
                 </a>
