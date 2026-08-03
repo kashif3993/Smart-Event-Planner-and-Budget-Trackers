@@ -86,9 +86,19 @@ class ContentionDetectionService
     }
 
     /**
-     * CR-20 — an immutable snapshot of every sub-event in contention, taken
-     * at read time. Callers (the sandbox) hold onto this rather than
-     * re-querying, so figures can't shift mid-review.
+     * CR-20 — an immutable snapshot of the pool, taken at read time. Callers
+     * (the sandbox) hold onto this rather than re-querying, so figures can't
+     * shift mid-review.
+     *
+     * FR-38/FR-39/FR-44 — every event belonging to the pool is included, not
+     * just the ones individually breaching or projecting a breach. A "Pooled
+     * Budget" is money the whole group draws against, so a healthy sibling
+     * event's unused headroom must be reachable by the negotiation just like
+     * an overrun one's — otherwise a deficit the pool can clearly cover gets
+     * reported as unresolvable simply because the slack happens to sit on an
+     * event that isn't itself over budget. `is_contributing` marks which
+     * events are actually driving the breach, for callers (the banner) that
+     * only want to name those.
      *
      * @return array{
      *   pooled_budget_cap: float, global_deficit: float, events: Collection
@@ -96,9 +106,9 @@ class ContentionDetectionService
      */
     public function snapshot(EventGroup $group): array
     {
-        $contributing = $this->eventsInBreachOrProjecting($group);
+        $contributingIds = $this->eventsInBreachOrProjecting($group)->pluck('id');
 
-        $events = $contributing->map(fn (Event $e) => (object) [
+        $events = $group->events->map(fn (Event $e) => (object) [
             'id' => $e->id,
             'name' => $e->event_name,
             'type' => $e->event_type,
@@ -108,6 +118,7 @@ class ContentionDetectionService
             'budget_spent' => (float) $e->budget_spent,
             'overrun' => max(0, (float) $e->budget_spent - (float) $e->total_budget),
             'headroom' => max(0, (float) $e->total_budget - (float) $e->budget_spent),
+            'is_contributing' => $contributingIds->contains($e->id),
         ])->values();
 
         return [

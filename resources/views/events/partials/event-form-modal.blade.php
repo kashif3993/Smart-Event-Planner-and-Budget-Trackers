@@ -122,7 +122,7 @@
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" data-close-modal="eventModal">Cancel</button>
-                <button type="submit" class="btn btn-primary">{{ $isEdit ? 'Save Changes' : 'Create Event' }}</button>
+                <button type="submit" class="btn btn-primary">{{ $isEdit ? 'Update' : 'Create Event' }}</button>
             </div>
         </form>
 

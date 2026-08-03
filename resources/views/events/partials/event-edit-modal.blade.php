@@ -108,7 +108,7 @@
                 </button>
                 <div>
                     <button type="button" class="btn btn-outline" data-close-modal="eventModalEdit">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
                 </div>
             </div>
         </form>

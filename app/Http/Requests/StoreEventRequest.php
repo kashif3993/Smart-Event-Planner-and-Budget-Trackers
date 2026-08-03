@@ -27,7 +27,7 @@ class StoreEventRequest extends FormRequest
             'event_type' => ['required', 'in:Wedding,Birthday Party,Corporate Event,Baby Shower,Graduation,Custom'],
             'custom_event_type' => ['nullable', 'required_if:event_type,Custom', 'string', 'max:100'],
             'event_date' => ['required', 'date'],
-            'event_time' => ['nullable', 'date_format:H:i'],
+            'event_time' => ['nullable', 'date_format:H:i,H:i:s'],
             'guest_count' => ['nullable', 'integer', 'min:0'],
             'max_guests' => ['nullable', 'integer', 'min:0'],
             'venue_name' => ['nullable', 'string', 'max:255'],

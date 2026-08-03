@@ -121,11 +121,14 @@ document.addEventListener('DOMContentLoaded', function () {
             var manual = manualOverrides.hasOwnProperty(event.id);
 
             var rankBadge = (c && c.rank) ? '<span class="sandbox-rank-badge">Rank #' + c.rank + '</span>' : '';
+            var contributionBadge = event.is_contributing
+                ? '<span class="chip chip-danger">Over budget</span>'
+                : '<span class="chip chip-muted">Healthy — asked to help cover the pool</span>';
 
             return '<div class="sandbox-event-row ' + (event.is_immune ? 'is-immune' : '') + '" data-event-id="' + event.id + '">' +
                 '<div class="sandbox-event-row-top">' +
                     '<div>' +
-                        '<span class="sandbox-event-name">' + event.name + '</span>' + rankBadge +
+                        '<span class="sandbox-event-name">' + event.name + '</span>' + rankBadge + ' ' + contributionBadge +
                         '<div class="sandbox-event-meta">' + event.type + ' &middot; ' + event.days_remaining + ' days out &middot; ' +
                             'budget ' + money(event.total_budget) + ', spent ' + money(event.budget_spent) + '</div>' +
                     '</div>' +
@@ -391,7 +394,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 concessions: latestProposal.concessions.map(function (c) {
                     return { event_id: c.event_id, concession_amount: c.concession, rationale: c.rationale || '' };
                 }),
-                manually_amended: Object.keys(manualOverrides).length > 0
+                manually_amended: Object.keys(manualOverrides).length > 0,
+                immune_event_ids: immuneIds(),
+                expected_global_deficit: globalDeficit
             })
         })
             .then(function (response) { return response.json().then(function (data) { return { ok: response.ok, data: data }; }); })
@@ -400,6 +405,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     statusBox.className = 'rebalance-status is-success';
                     statusBox.textContent = result.data.message + ' Reloading...';
                     setTimeout(function () { window.location.reload(); }, 1000);
+                } else if (result.data && result.data.stale) {
+                    // FR-24 — numbers moved since the snapshot was taken; refresh
+                    // the sandbox against current data instead of retrying blind.
+                    statusBox.className = 'rebalance-status is-warning';
+                    statusBox.textContent = result.data.message + ' Refreshing...';
+                    setTimeout(loadSnapshot, 1500);
                 } else {
                     statusBox.className = 'rebalance-status is-error';
                     statusBox.textContent = (result.data && result.data.message) || 'Could not commit the allocation.';

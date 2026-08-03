@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/events.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/tasks.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/event-groups.css') }}?v={{ time() }}">
     <script src="{{ asset('js/events.js') }}?v={{ time() }}" defer></script>
     <script src="{{ asset('js/tasks.js') }}?v={{ time() }}" defer></script>
 </head>
@@ -28,6 +29,16 @@
             @endif
             @if (session('error'))
                 <div class="alert alert-error">{{ session('error') }}</div>
+            @endif
+
+            @if ($groupContention)
+                <div class="panic-banner panic-banner--critical">
+                    <div>
+                        <div class="panic-banner-title"><i class="fas fa-triangle-exclamation"></i> This event is part of a budget contention</div>
+                        <div class="panic-banner-sub">"{{ $groupContention['group']->name }}" is short by {{ $groupContention['group']->currencySymbol() }}{{ number_format($groupContention['deficit'], 0) }} across its pooled events.</div>
+                    </div>
+                    <a href="{{ route('event-groups.show', $groupContention['group']) }}" class="btn btn-primary btn-sm">Open Resolution Sandbox</a>
+                </div>
             @endif
 
             <div class="breadcrumb">

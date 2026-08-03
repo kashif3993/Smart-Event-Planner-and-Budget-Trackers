@@ -1,6 +1,6 @@
 @php
     $deficitFormatted = $group->currencySymbol().number_format($contentionData['global_deficit'], 0);
-    $eventNames = $contentionData['events']->pluck('name')->implode(', ');
+    $eventNames = $contentionData['events']->where('is_contributing', true)->pluck('name')->implode(', ');
 @endphp
 <div class="panic-banner panic-banner--critical">
     <div>

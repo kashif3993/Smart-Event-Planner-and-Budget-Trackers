@@ -32,7 +32,27 @@ class ContentionResolutionController extends Controller
             'concessions.*.concession_amount' => ['required', 'numeric', 'min:0'],
             'concessions.*.rationale' => ['nullable', 'string'],
             'manually_amended' => ['boolean'],
+            'immune_event_ids' => ['array'],
+            'immune_event_ids.*' => ['integer'],
+            'expected_global_deficit' => ['nullable', 'numeric'],
         ]);
+
+        // FR-24 / section 8 "an expense is logged elsewhere while the sandbox
+        // is open" — the sandbox snapshot is held client-side for the whole
+        // session, so if the pool's real numbers moved since it was taken,
+        // applying the old proposal as-is would silently commit a stale
+        // reallocation. Refuse and point the user at a refresh instead.
+        if (array_key_exists('expected_global_deficit', $data) && $data['expected_global_deficit'] !== null) {
+            $currentDeficit = $contention->globalDeficit($group);
+
+            if (abs($currentDeficit - (float) $data['expected_global_deficit']) > 0.01) {
+                return response()->json([
+                    'success' => false,
+                    'stale' => true,
+                    'message' => "This pool's numbers changed since you opened the sandbox (deficit is now {$group->currencySymbol()}".number_format($currentDeficit, 0).'). Refresh the sandbox and try again.',
+                ], 409);
+            }
+        }
 
         try {
             $committer->commit(
@@ -41,7 +61,8 @@ class ContentionResolutionController extends Controller
                 $data['strategy'],
                 $data['strategy'] === 'Multi-Agent Negotiation',
                 null,
-                $data['manually_amended'] ?? false
+                $data['manually_amended'] ?? false,
+                $data['immune_event_ids'] ?? []
             );
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first()], 422);

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use App\Services\AiTaskGeneratorService;
+use App\Services\ContentionDetectionService;
 use App\Services\VendorCategorySuggestionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,9 +36,20 @@ class EventController extends Controller
         return view('events.index', compact('events'));
     }
 
-    public function show(Request $request, Event $event): View
+    public function show(Request $request, Event $event, ContentionDetectionService $contention): View
     {
         $this->authorizeEvent($event);
+
+        // FR-17 — an event caught in its group's pooled-budget contention
+        // shows a secondary indicator here linking back to the pool-level
+        // conflict, so the user isn't only told about it via the dashboard.
+        $groupContention = null;
+        if ($event->event_group_id && $event->eventGroup && $event->eventGroup->isPooled() && $contention->isContended($event->eventGroup)) {
+            $groupContention = [
+                'group' => $event->eventGroup,
+                'deficit' => $contention->globalDeficit($event->eventGroup),
+            ];
+        }
 
         $query = $event->tasks()
             ->with('dependsOn:id,task_name')
@@ -58,7 +70,7 @@ class EventController extends Controller
 
         $tasksByPhase = $tasks->getCollection()->groupBy('phase');
 
-        return view('events.show', compact('event', 'tasks', 'tasksByPhase', 'allEventTasks'));
+        return view('events.show', compact('event', 'tasks', 'tasksByPhase', 'allEventTasks', 'groupContention'));
     }
 
     public function store(

@@ -44,6 +44,7 @@ class ContentionSandboxController extends Controller
                 'budget_spent' => (float) $event->budget_spent,
                 'overrun' => max(0, (float) $event->budget_spent - (float) $event->total_budget),
                 'headroom' => max(0, (float) $event->total_budget - (float) $event->budget_spent),
+                'is_contributing' => $row->is_contributing,
                 'categories' => $this->categoriesFor($event),
             ];
         })->values();
